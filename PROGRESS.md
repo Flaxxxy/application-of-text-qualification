@@ -55,7 +55,7 @@ Running log of what was done, decisions made, and open issues. Newest phase at t
 - Environment: `rrf` was picking up packages from `~/.local`; fixed with `PYTHONNOUSERSITE=1` on the env. pandas 3.0 in use.
 - Distinctive-words chart uses document frequency (one long review said "SP3" 72 times and topped the positive list otherwise).
 
-## Phase 2 — Text models (2026-10-13, in progress: waiting for Colab fine-tunes)
+## Phase 2 — Text models (2026-10-13, done)
 
 **Done**
 - `src/text_models.py` (one interface for all models + fine-tuning code), `src/evaluate.py` (metrics, metrics.json store, plots, error analysis), `src/issue_tags.py` (7 tags, negation handling).
@@ -68,6 +68,8 @@ Running log of what was done, decisions made, and open issues. Newest phase at t
 
 | model | macro-F1 | external F1 | ms/review (CPU) | size MB |
 |---|---|---|---|---|
+| roberta_finetuned (Colab) | 0.790 | 1.000 | – (GPU) | 499 |
+| distilbert_finetuned (Colab) | 0.768 | 1.000 | – (GPU) | 268 |
 | tfidf_logreg | 0.731 | 0.879 | 0.01 | 3.2 |
 | naive_bayes | 0.724 | 0.906 | 0.01 | 4.0 |
 | bench_nlptown_stars | 0.715 | 1.000 | 125 | 669 |
@@ -83,4 +85,6 @@ Running log of what was done, decisions made, and open issues. Newest phase at t
 - Transformers v5 removed `warmup_ratio`; code supports v4 and v5.
 - One HF download failed with a network error; script now supports `bench_<key>` to rerun a single benchmark.
 
-**Open decision (for Denis):** deployed text model. MiniLM + LR (planned) is below TF-IDF on the test set (0.696 vs 0.731) but best on unfamiliar text. Decide after fine-tune results.
+- Colab fine-tuning (2 epochs, T4): RoBERTa 0.609 as-is -> 0.790 fine-tuned (neutral F1 0.31 -> 0.69). Code came via `code.zip` on Drive because GitHub failed to create a token (`scripts/make_code_zip.py`).
+
+**Open decision (for Denis):** which text model the website uses (MiniLM + LR planned = 0.696; fine-tuned DistilBERT = 0.768; RoBERTa = 0.790 but likely too big for the 100 MB deploy folder).

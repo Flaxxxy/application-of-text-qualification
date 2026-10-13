@@ -227,11 +227,13 @@ A good tagger fires far more on negative reviews than on positive ones.
         md("""
 ## Key findings
 
-*(Fine-tuned DistilBERT/RoBERTa rows appear in the table once the Colab results are imported; this
-section is updated then.)*
-
-- **Simple beats big on our data:** TF-IDF + Logistic Regression (macro-F1 **0.731**) and Naive Bayes (0.724) beat every
+- **Best model: RoBERTa fine-tuned on our reviews (macro-F1 0.790)**, then fine-tuned DistilBERT (0.768). Both also score 1.00 on the external set.
+- **Fine-tuning is what makes the difference:** the same Cardiff RoBERTa scores 0.609 used as it is and **0.790 after 2 epochs on our data** (+0.18);
+  its neutral F1 goes from 0.31 to 0.69. Downloading a strong model is a good start, but it has to learn *our* labels.
+- **Among models without fine-tuning, simple beats big:** TF-IDF + Logistic Regression (**0.731**) and Naive Bayes (0.724) beat every
   ready-made internet model, including a 670 MB BERT (nlptown, 0.715), while being ~10,000× faster (0.01 vs 125 ms per review) and 200× smaller.
+- **Accuracy vs cost:** the fine-tuned transformers are ~6 points better than TF-IDF but ~100–500 MB and ~100–150 ms per review on CPU (same
+  architectures as the HF benchmarks timed here), which matters for a small web server.
 - **Ready-made models struggle with "neutral":** the Cardiff RoBERTa reaches F1 0.31 on neutral, and the default HF pipeline
   can't predict neutral at all (macro-F1 0.48). What counts as "neutral" depends on the data, so models trained on someone else's data don't know our definition.
 - **But ready-made models are strong on clear, unfamiliar text:** on the external Customer Feedback set, both RoBERTa and nlptown score 1.00 and MiniLM 0.99,
@@ -359,8 +361,11 @@ print("\\nThe fine-tuned models stay on Drive in MyDrive/rrf/models/ (not needed
         md("""
 ## Key findings
 
-*(Filled in after the run, from the table above: which model is best, how much fine-tuning
-improved RoBERTa compared to using it as it is, and where the models still make mistakes.)*
+Results of the run on 2026-10-13 (T4 GPU, 2 epochs, lr 2e-5, max 256 tokens), test set of 6,751 reviews:
+
+- **RoBERTa fine-tuned: macro-F1 0.790** (validation 0.793). Used as it is, the same model scored 0.609, so fine-tuning added +0.18; neutral F1 rose from 0.31 to 0.69.
+- **DistilBERT fine-tuned: macro-F1 0.768** (validation 0.780), starting from a general language model with a new classification head.
+- Both are the best text models in the project and score 1.00 on the external Customer Feedback set. Full comparison: `notebooks/02_text_models.ipynb`.
 """),
     ]
 
