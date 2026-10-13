@@ -10,9 +10,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import sys
+
 import matplotlib
 
-matplotlib.use("Agg")  # draw to files; works on servers and Colab without a screen
+# Outside Jupyter (scripts, the web server) draw to files only, which works without a screen.
+# Inside a notebook keep the default, so figures also appear in the notebook itself.
+if "ipykernel" not in sys.modules:
+    matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from src.config import path
@@ -31,7 +36,7 @@ def apply_style() -> None:
         "axes.edgecolor": GRID, "axes.linewidth": 0.8,
         "axes.spines.top": False, "axes.spines.right": False,
         "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.6, "axes.axisbelow": True,
-        "axes.titlesize": 12, "axes.titleweight": "semibold", "axes.titlecolor": INK,
+        "axes.titlesize": 12, "axes.titleweight": "bold", "axes.titlecolor": INK,
         "axes.labelcolor": INK_MUTED, "axes.labelsize": 10,
         "xtick.color": INK_MUTED, "ytick.color": INK_MUTED, "xtick.labelsize": 9, "ytick.labelsize": 9,
         "legend.frameon": False, "legend.fontsize": 9,

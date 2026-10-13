@@ -1,0 +1,4 @@
+source,label,train,val,test,total
+produce_kaggle,fresh,651,93,186,930
+produce_kaggle,rotten,907,129,261,1297
+total,,1558,222,447,2227

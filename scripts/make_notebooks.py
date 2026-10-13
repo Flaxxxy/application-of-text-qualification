@@ -246,6 +246,98 @@ A good tagger fires far more on negative reviews than on positive ones.
     ]
 
 
+def nb_04_image_data():
+    return [
+        md("""
+# 04 · Image data: packages (damaged vs intact) and produce (rotten vs fresh)
+
+**Goal:** build clean, leak-free image datasets for the two photo models.
+
+| Domain | Business question | Sources |
+|---|---|---|
+| packages | was the order damaged in shipping? | Kaggle *Industrial Quality Control of Packages* (3D renders) + Roboflow *Damaged vs good packages* (CC BY 4.0) |
+| produce | is the food spoiled? | Kaggle *Fruits fresh and rotten for classification* (apple, banana, orange) |
+
+**Inputs:** `data/raw/images/` (from `scripts/download_data.py images`).
+**Outputs:** `data/processed/images/<domain>/{train,val,test}/<class>/` (224×224 JPEG), a manifest CSV per domain, figures in `results/figures/`.
+
+Steps (all in `src/data_images.py`): index → remove unreadable files → **remove copies** → resize to 224×224 → `splitfolders` 70/10/20 (seed 42) → final check that no val/test image is a copy of a train image.
+"""),
+        code(SETUP),
+        md("""
+## 1. The hidden problem: copies
+
+If a photo and an edited copy of it land in train and test, the model has effectively seen the
+test answer and its accuracy is inflated. These datasets are full of copies: the fruit set was
+"augmented" by its author (rotated by random angles, flipped, cropped, with noise added).
+
+**Attempt 1: perceptual hash** (a 64-bit fingerprint, compared in all 8 orientations). It failed both ways:
+- on the Kaggle package renders (one box on one conveyor belt) it calls *different* boxes copies,
+  even a damaged and an intact one;
+- on the fruits, copies rotated by e.g. 20° look as "different" as genuinely different fruits.
+"""),
+        code("""from src.data_images import index_domain, closest_pairs, plot_pairs
+raw_packages = index_domain("packages")
+kaggle_only = raw_packages[raw_packages["source"] == "packages_kaggle"]
+pairs = closest_pairs(kaggle_only, method="phash", n=3, same_label=False, band=(0, 4))
+plot_pairs(pairs, "Hash: different renders (and labels) look like copies", "image_phash_kaggle_lookalikes", "hash distance");"""),
+        md("""
+**Attempt 2: CLIP embeddings** grouped *similar-looking* fruits (hundreds of different bananas
+into one group), not *copies*.
+
+**Final method: SSCD** (Meta AI, MIT licence), a model trained specifically for **copy detection**.
+It gives an image and its edited copies nearly the same fingerprint. Two images count as copies if
+their SSCD similarity is ≥ 0.65 (chosen by looking at pairs: between 0.6 and 0.75 almost all pairs
+are rotated/flipped/noised copies). The Kaggle renders get a stricter rule (only exact copies, ≥ 0.99),
+because SSCD also sees every render of that one scene as similar.
+
+Copies are grouped with "leader" clustering (each image joins a group only if it is directly similar
+to that group's first image), so copy-of-a-copy chains can't merge different photos. One image per group is kept.
+"""),
+        code("""from src.data_images import copy_group_example, plot_images
+raw_produce = index_domain("produce")
+plot_images(copy_group_example(raw_produce), "One original fruit photo and its copies in the raw dataset", "image_produce_copy_group");"""),
+        code("""pairs = closest_pairs(raw_produce.sample(3000, random_state=42), method="sscd", n=4, band=(0.65, 0.8))
+plot_pairs(pairs, "SSCD: pairs just above the copy threshold", "image_produce_sscd_pairs");"""),
+        md("## 2. Packages: build the dataset"),
+        code("""from src.data_images import build_image_dataset
+packages = build_image_dataset("packages", verbose=False)
+print("Raw images per source and class:"); display(packages["raw_counts"])
+print("Unreadable files:", len(packages["broken"]))
+print("Copies:", packages["duplicate_report"])
+print("Val/test copies of train images found after the split (removed):", packages["cross_split_copies_removed"])
+print("Final counts per source, class and split:"); display(packages["split_counts"])"""),
+        code("""from src.data_images import plot_sample_grid
+plot_sample_grid(packages["manifest"], "packages", group_col="source");"""),
+        md("## 3. Produce: build the dataset"),
+        code("""produce = build_image_dataset("produce", verbose=False)
+print("Raw images per class:"); display(produce["raw_counts"])
+print("Unreadable files:", len(produce["broken"]))
+print("Copies:", produce["duplicate_report"])
+print("Val/test copies of train images found after the split (removed):", produce["cross_split_copies_removed"])
+print("Final counts per class and split:"); display(produce["split_counts"])
+print("Images per fruit and class:"); display(produce["subtype_counts"])"""),
+        code("""plot_sample_grid(produce["manifest"], "produce", group_col="subtype");"""),
+        md("""
+## Key findings
+
+- **Copies were the main data problem.** 84% of the fruit images (11,372 of 13,599) were rotated, flipped,
+  cropped or noised copies of other images. Kept in, copies of training photos would sit in the test set and
+  inflate accuracy. After removing them: **2,227 different fruit photos** (930 fresh, 1,297 rotten), split
+  1,558 / 222 / 447. The Kaggle zip also contained the whole dataset twice.
+- **Choosing the right copy detector mattered:** the perceptual hash missed rotated copies and wrongly flagged
+  different renders; CLIP grouped similar-looking fruits; SSCD, a model made for copy detection, separated copies
+  from different photos (checked by eye at several similarity levels).
+- **Packages: 981 → 948 images** (33 copies removed, 2 groups with conflicting labels dropped), split 662 / 94 / 192.
+  No unreadable files in either domain, and no val/test image is a copy of a train image.
+- **Dataset bias to keep in mind:** in the Roboflow package set, "intact" is mostly shiny product boxes on studio
+  backgrounds and "damaged" mostly brown shipping cardboard, with some label noise; the Kaggle packages are 3D renders
+  of one box on one conveyor belt. Both differ from real customer photos (domain shift). Grad-CAM in Phase 4
+  will show whether the model looks at the damage or at the box type.
+"""),
+    ]
+
+
 COLAB_SETUP = '''# ---- Setup: GPU check, Google Drive, code, packages ----
 import os, subprocess, sys
 from pathlib import Path
@@ -373,6 +465,7 @@ Results of the run on 2026-10-13 (T4 GPU, 2 epochs, lr 2e-5, max 256 tokens), te
 NOTEBOOKS = {
     "01": ("01_text_data.ipynb", nb_01_text_data),
     "02": ("02_text_models.ipynb", nb_02_text_models),
+    "04": ("04_image_data.ipynb", nb_04_image_data),
     "colab03": ("colab_03_finetune_text.ipynb", nb_colab_03_finetune_text),
 }
 

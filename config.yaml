@@ -99,7 +99,16 @@ text:
 images:
   size: 224
   split: {train: 0.70, val: 0.10, test: 0.20}
-  phash_max_distance: 4           # images closer than this count as near-duplicates
+  # Copy detection (src/data_images.py): two images are copies if their SSCD similarity is
+  # at least min_similarity. 0.65 was chosen by looking at fruit pairs: at 0.60-0.75 almost all
+  # pairs are rotated/flipped/noised copies of one photo.
+  dedup:
+    min_similarity: 0.65
+    overrides:
+      # The Kaggle packages are 3D renders of one box on one conveyor belt: SSCD sees every
+      # render as a near-copy (>0.9), even damaged vs intact. Checked: no pair reaches 0.99,
+      # and at 0.98 half the matches have different labels. So only exact copies count here.
+      packages_kaggle: 0.99
 
   sources:
     packages_kaggle:

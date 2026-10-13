@@ -88,3 +88,24 @@ Running log of what was done, decisions made, and open issues. Newest phase at t
 - Colab fine-tuning (2 epochs, T4): RoBERTa 0.609 as-is -> 0.790 fine-tuned (neutral F1 0.31 -> 0.69). Code came via `code.zip` on Drive because GitHub failed to create a token (`scripts/make_code_zip.py`).
 
 **Open decision (for Denis):** which text model the website uses (MiniLM + LR planned = 0.696; fine-tuned DistilBERT = 0.768; RoBERTa = 0.790 but likely too big for the 100 MB deploy folder).
+
+## Phase 3 — Image data (2026-10-13, checkpoint)
+
+**Done**
+- Downloaded packages (Kaggle 400 renders, Roboflow 581) and fruits (3.58 GB zip, approved).
+- `src/data_images.py`: index → readability check → copy removal (SSCD) → 224×224 stretch resize → `splitfolders` 70/10/20 → final cross-split copy check. Manifests in `data/processed/images/`.
+- `notebooks/04_image_data.ipynb` executed (sample grids, copy examples).
+- Fixed: `src/plots.py` forced the Agg backend, so notebooks 01/02 had no inline figures; now Agg only outside Jupyter. All notebooks re-run.
+
+**Numbers**
+- Packages: 981 → 948 (33 copies, 2 conflicting-label groups), train/val/test 662/94/192 (damaged 437, intact 511).
+- Produce: 13,599 → 2,227 (11,372 copies = 84%), 1,558/222/447 (fresh 930, rotten 1,297; apple 750, banana 879, orange 598).
+- 0 unreadable files; 0 val/test copies of train images after the split.
+- Processed size: 13 MB packages, 30 MB produce.
+
+**Findings / decisions**
+- Fruit zip contains the dataset twice (`dataset/` and `dataset/dataset/`); only the top copy is indexed.
+- Copy detection: perceptual hash (8 orientations) failed: rotated copies at distance 6–12 overlap with different fruits; Kaggle renders of different boxes (even damaged vs intact) are 2–6 bits apart. CLIP over-merged (one group of 8k "bananas on white"). **SSCD** (`sscd_disc_mixup`, MIT) at similarity ≥ 0.65 with leader clustering (no copy-of-copy chains) separates copies well (checked visually at 0.60–0.80). Kaggle renders: threshold 0.99 (SSCD scores all renders >0.9; at 0.98 half of matches have different labels). Fingerprints cached in `data/interim/sscd_cache.npz`.
+- Roboflow packages bias: intact = mostly product/medicine boxes on studio backgrounds, damaged = mostly brown cardboard; some label noise; stock-photo watermarks. Kaggle packages are synthetic renders.
+
+**Open decision (for Denis):** add Roboflow **BoxCondition** (`sih-yna9n/boxcondition-onzuw`, CC BY 4.0, 3,972 images, classification, brown cardboard in both classes). Downloaded to `data/raw/images/_candidates/` for inspection only. With it, packages would have 2,195 unique images (BoxCondition 650 damaged / 649 intact after removing its many copies; 80 Roboflow photos are copies of BoxCondition photos and would be deduplicated across sources).
