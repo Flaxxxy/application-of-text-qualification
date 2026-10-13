@@ -376,6 +376,79 @@ subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", "requirement
 print("ready:", REPO)'''
 
 
+def nb_colab_image(domain: str, number: str):
+    bad, good = {"packages": ("damaged", "intact"), "produce": ("rotten", "fresh")}[domain]
+    question = {"packages": "was the package damaged in shipping?", "produce": "is the fruit rotten?"}[domain]
+    return [
+        md(f"""
+# Colab {number} · Image model: {domain} ({bad} vs {good})
+
+**Business question:** {question}
+
+**Goal:** train and compare two models on the {domain} photos:
+- **small CNN from scratch** (course architecture: Conv2D, MaxPooling, Dropout, Flatten, Dense softmax);
+- **MobileNetV2 transfer learning** (ImageNet weights): base frozen first, then the top 30 layers fine-tuned. This one goes to the website.
+
+Both use augmentation (flip, rotation, zoom, brightness, contrast), class weights and early stopping. The decision
+threshold is tuned on the validation set so that at least 90% of {bad} photos are caught. Grad-CAM shows where
+the model looks.
+
+**Runtime:** GPU (Runtime → Change runtime type → T4 GPU). About 15–30 minutes.
+
+**Inputs (Google Drive):** `MyDrive/rrf/code.zip`, `MyDrive/rrf/images.zip`
+**Outputs:** copied to `MyDrive/rrf/` (metrics, predictions, figures, and the trained MobileNetV2 model).
+"""),
+        code(COLAB_SETUP),
+        md("## 1. Get the images from Drive"),
+        code(f'''import zipfile
+zipfile.ZipFile(DRIVE / "images.zip").extractall(REPO)
+import pandas as pd
+m = pd.read_csv(REPO / "data/processed/images/{domain}_manifest.csv")
+pd.crosstab(m["label"], m["split"], margins=True)'''),
+        md("## 2. Small CNN from scratch (baseline)"),
+        code(f'''from src.config import set_seed
+from src.image_models import run_experiment
+set_seed()
+cnn = run_experiment("{domain}", "small_cnn")'''),
+        md("## 3. MobileNetV2 transfer learning"),
+        code(f'''mnv2 = run_experiment("{domain}", "mobilenetv2")'''),
+        md("## 4. Comparison (test set, tuned threshold)"),
+        code(f'''import pandas as pd
+rows = {{}}
+for name, mtr in [("small_cnn", cnn), ("mobilenetv2", mnv2)]:
+    t = mtr["test"]; bad = t["per_class"]["{bad}"]
+    rows[name] = {{"accuracy": t["accuracy"], "macro-F1": t["macro_f1"], "recall {bad}": bad["recall"],
+                  "precision {bad}": bad["precision"], "threshold": mtr["threshold"],
+                  "macro-F1 at 0.5": mtr["test_default"]["macro_f1"], "size MB": mtr["size_mb"]}}
+display(pd.DataFrame(rows).T)
+display(pd.DataFrame({{n: {{g: v["macro_f1"] for g, v in mtr["test_per_group"].items()}}
+                      for n, mtr in [("small_cnn", cnn), ("mobilenetv2", mnv2)]}}))'''),
+        md("## 5. Copy results to Drive and list what to bring back"),
+        code(f'''import shutil
+files = []
+for name in ["small_cnn", "mobilenetv2"]:
+    files += [f"results/colab/metrics_image_{domain}__{{name}}.json",
+              f"results/predictions/image_{domain}_{{name}}_test.csv",
+              f"results/figures/cm_image_{domain}_{{name}}.png",
+              f"results/figures/history_{domain}_{{name}}.png",
+              f"results/figures/gradcam_{domain}_{{name}}.png"]
+files.append("models/train/image_{domain}_mobilenetv2.keras")   # needed for the website (Phase 5)
+for f in files:
+    dst = DRIVE / f
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(REPO / f, dst)
+
+print("Copy these files from Google Drive (MyDrive/rrf/...) into the SAME paths in the project:\\n")
+for f in files:
+    print("  ", f)'''),
+        md("""
+## Key findings
+
+*(Filled in after the run.)*
+"""),
+    ]
+
+
 def nb_colab_03_finetune_text():
     return [
         md("""
@@ -469,6 +542,8 @@ NOTEBOOKS = {
     "02": ("02_text_models.ipynb", nb_02_text_models),
     "04": ("04_image_data.ipynb", nb_04_image_data),
     "colab03": ("colab_03_finetune_text.ipynb", nb_colab_03_finetune_text),
+    "colab05": ("colab_05_image_packages.ipynb", lambda: nb_colab_image("packages", "05")),
+    "colab06": ("colab_06_image_produce.ipynb", lambda: nb_colab_image("produce", "06")),
 }
 
 

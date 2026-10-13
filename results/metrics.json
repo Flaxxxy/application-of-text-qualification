@@ -998,5 +998,217 @@
       "size_mb": 498.6,
       "base_model": "cardiffnlp/twitter-roberta-base-sentiment-latest"
     }
+  },
+  "image_packages": {
+    "bench_clip_zero_shot": {
+      "labels": [
+        "intact",
+        "damaged"
+      ],
+      "threshold": 0.2677,
+      "test_default": {
+        "n": 442,
+        "accuracy": 0.4548,
+        "macro_f1": 0.4544,
+        "per_class": {
+          "intact": {
+            "precision": 0.475,
+            "recall": 0.4113,
+            "f1": 0.4408,
+            "support": 231
+          },
+          "damaged": {
+            "precision": 0.438,
+            "recall": 0.5024,
+            "f1": 0.468,
+            "support": 211
+          }
+        },
+        "confusion_matrix": [
+          [
+            95,
+            136
+          ],
+          [
+            105,
+            106
+          ]
+        ],
+        "labels": [
+          "intact",
+          "damaged"
+        ]
+      },
+      "test": {
+        "n": 442,
+        "accuracy": 0.4751,
+        "macro_f1": 0.4068,
+        "per_class": {
+          "intact": {
+            "precision": 0.4918,
+            "recall": 0.1299,
+            "f1": 0.2055,
+            "support": 231
+          },
+          "damaged": {
+            "precision": 0.4724,
+            "recall": 0.8531,
+            "f1": 0.6081,
+            "support": 211
+          }
+        },
+        "confusion_matrix": [
+          [
+            30,
+            201
+          ],
+          [
+            31,
+            180
+          ]
+        ],
+        "labels": [
+          "intact",
+          "damaged"
+        ]
+      },
+      "test_per_group": {
+        "packages_boxcondition": {
+          "n": 266,
+          "accuracy": 0.4662,
+          "macro_f1": 0.3936,
+          "recall_bad": 0.8
+        },
+        "packages_kaggle": {
+          "n": 71,
+          "accuracy": 0.6338,
+          "macro_f1": 0.582,
+          "recall_bad": 0.9211
+        },
+        "packages_roboflow": {
+          "n": 105,
+          "accuracy": 0.3905,
+          "macro_f1": 0.3237,
+          "recall_bad": 0.9737
+        }
+      },
+      "type": "ready-made (zero-shot CLIP, no training)",
+      "threshold_tuning": {
+        "threshold": 0.2677,
+        "rule": "highest threshold with val recall(bad) >= 0.9",
+        "val_recall_bad": 0.9038
+      },
+      "prompts": [
+        "a photo of an intact, undamaged package or box",
+        "a photo of a damaged, crushed, torn or dented package or box"
+      ],
+      "model": "openai/clip-vit-base-patch32"
+    }
+  },
+  "image_produce": {
+    "bench_clip_zero_shot": {
+      "labels": [
+        "fresh",
+        "rotten"
+      ],
+      "threshold": 0.1926,
+      "test_default": {
+        "n": 447,
+        "accuracy": 0.8009,
+        "macro_f1": 0.7984,
+        "per_class": {
+          "fresh": {
+            "precision": 0.7299,
+            "recall": 0.828,
+            "f1": 0.7758,
+            "support": 186
+          },
+          "rotten": {
+            "precision": 0.8644,
+            "recall": 0.7816,
+            "f1": 0.8209,
+            "support": 261
+          }
+        },
+        "confusion_matrix": [
+          [
+            154,
+            32
+          ],
+          [
+            57,
+            204
+          ]
+        ],
+        "labels": [
+          "fresh",
+          "rotten"
+        ]
+      },
+      "test": {
+        "n": 447,
+        "accuracy": 0.7651,
+        "macro_f1": 0.7296,
+        "per_class": {
+          "fresh": {
+            "precision": 0.9091,
+            "recall": 0.4839,
+            "f1": 0.6316,
+            "support": 186
+          },
+          "rotten": {
+            "precision": 0.7241,
+            "recall": 0.9655,
+            "f1": 0.8276,
+            "support": 261
+          }
+        },
+        "confusion_matrix": [
+          [
+            90,
+            96
+          ],
+          [
+            9,
+            252
+          ]
+        ],
+        "labels": [
+          "fresh",
+          "rotten"
+        ]
+      },
+      "test_per_group": {
+        "apple": {
+          "n": 156,
+          "accuracy": 0.7308,
+          "macro_f1": 0.5965,
+          "recall_bad": 1.0
+        },
+        "banana": {
+          "n": 157,
+          "accuracy": 0.9363,
+          "macro_f1": 0.9346,
+          "recall_bad": 0.9053
+        },
+        "orange": {
+          "n": 134,
+          "accuracy": 0.6045,
+          "macro_f1": 0.549,
+          "recall_bad": 1.0
+        }
+      },
+      "type": "ready-made (zero-shot CLIP, no training)",
+      "threshold_tuning": {
+        "threshold": 0.1926,
+        "rule": "highest threshold with val recall(bad) >= 0.9",
+        "val_recall_bad": 0.907
+      },
+      "prompts": [
+        "a photo of a fresh fruit",
+        "a photo of a rotten, moldy or spoiled fruit"
+      ],
+      "model": "openai/clip-vit-base-patch32"
+    }
   }
 }

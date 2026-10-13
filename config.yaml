@@ -134,6 +134,20 @@ images:
       slug: sriramr/fruits-fresh-and-rotten-for-classification
       domain: produce
 
+  # Training settings for both image models (src/image_models.py), same for both domains.
+  train:
+    batch_size: 32
+    epochs_cnn: 40          # small CNN from scratch (early stopping usually ends it sooner)
+    lr_cnn: 1.0e-3
+    epochs_head: 15         # MobileNetV2 stage 1: base frozen, only the head learns
+    lr_head: 1.0e-3
+    epochs_finetune: 15     # MobileNetV2 stage 2: top layers of the base unfrozen
+    lr_finetune: 1.0e-5
+    finetune_layers: 30
+    patience: 5             # early stopping: epochs without val-loss improvement
+  target_recall_bad: 0.90   # threshold tuning: catch at least 90% of damaged/rotten on validation
+  clip_model: openai/clip-vit-base-patch32   # zero-shot baseline
+
   # Unlabelled customer photos for the website demo only (never for training).
   demo_photos:
     max_images: 30

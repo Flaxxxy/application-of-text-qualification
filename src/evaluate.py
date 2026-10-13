@@ -86,7 +86,10 @@ def import_colab_metrics() -> list[str]:
     """
     imported = []
     for f in sorted(path("results", "colab", create=True).glob("metrics_*.json")):
-        section, name = f.stem.removeprefix("metrics_").split("_", 1)
+        stem = f.stem.removeprefix("metrics_")
+        # New files: metrics_<section>__<name>.json (section may contain "_", e.g. image_packages).
+        # Older text files: metrics_text_<name>.json.
+        section, name = stem.split("__", 1) if "__" in stem else stem.split("_", 1)
         save_metrics(section, name, json.loads(f.read_text()))
         imported.append(f"{section}/{name}")
     return imported

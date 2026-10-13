@@ -112,3 +112,16 @@ Running log of what was done, decisions made, and open issues. Newest phase at t
 Packages after adding it: 4,953 raw → 2,195 unique (BoxCondition 650 damaged / 649 intact, Kaggle 400, Roboflow 496), train/val/test 1,535/218/442.
 
 *Was:* add Roboflow **BoxCondition** (`sih-yna9n/boxcondition-onzuw`, CC BY 4.0, 3,972 images, classification, brown cardboard in both classes). Downloaded to `data/raw/images/_candidates/` for inspection only. With it, packages would have 2,195 unique images (BoxCondition 650 damaged / 649 intact after removing its many copies; 80 Roboflow photos are copies of BoxCondition photos and would be deduplicated across sources).
+
+## Phase 4 — Image models (2026-10-13, in progress: waiting for Colab runs)
+
+**Done**
+- TensorFlow 2.21 / Keras 3.15 installed in `rrf` (approved) for local smoke tests and the Phase 5 export.
+- `src/image_models.py`: small CNN (course architecture) and MobileNetV2 (frozen head, then top 30 layers fine-tuned), augmentation layers (Keras 3 replacement for the course's ImageDataGenerator), class weights, early stopping, threshold tuned on val for recall(bad) >= 0.90, per-source/per-fruit metrics, Grad-CAM, training curves. Models are saved without augmentation layers and take raw 0–255 pixels (simpler ONNX export + website).
+- `notebooks/colab_05_image_packages.ipynb`, `colab_06_image_produce.ipynb`: smoke-tested locally (1 epoch, 40 images) and dry-run of all non-Colab cells.
+- `scripts/run_image_benchmarks.py`: zero-shot CLIP baseline, run locally.
+- `scripts/make_images_zip.py` + updated `code.zip` for Colab.
+
+**Zero-shot CLIP baseline (test set)**
+- packages: macro-F1 0.454 at threshold 0.5, 0.407 at the recall-tuned threshold (close to guessing)
+- produce: macro-F1 0.798 at 0.5, 0.730 at the recall-tuned threshold
