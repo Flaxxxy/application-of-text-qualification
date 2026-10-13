@@ -1,0 +1,53 @@
+# Everything needed for data prep, training, evaluation and ONNX export.
+# Used locally (light text models) and on Colab (image models, DistilBERT).
+# The website uses requirements-app.txt instead, which is much smaller.
+
+# core
+numpy
+pandas
+pyyaml
+python-dotenv
+requests
+tqdm
+joblib
+
+# data download
+kaggle
+roboflow
+
+# text
+nltk
+textblob
+scikit-learn
+sentence-transformers
+transformers
+torch
+accelerate
+
+# images
+Pillow
+opencv-python-headless
+scikit-image
+split-folders
+imagehash
+tensorflow
+
+# export + inference
+onnx
+onnxruntime
+tf2onnx
+tokenizers
+
+# evaluation + plots
+matplotlib
+seaborn
+
+# app (so the website can also be run from the training environment)
+flask
+gunicorn
+psutil
+
+# dev
+pytest
+jupyter
+ipykernel

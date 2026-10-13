@@ -1,0 +1,116 @@
+# Central settings for the whole project.
+# Code never hard-codes paths or magic numbers; it reads them from here via src/config.py.
+# All paths are relative to the repo root.
+
+seed: 42
+
+paths:
+  data_raw: data/raw
+  data_interim: data/interim
+  data_processed: data/processed
+  models_train: models/train      # git-ignored, big training outputs
+  models_deploy: models/deploy    # committed, small ONNX models used by the website
+  results: results
+  figures: results/figures
+  demo_data: demo_data
+
+# Safety limit for scripts/download_data.py: anything bigger needs --allow-large.
+download:
+  max_size_gb: 2.0
+
+# ---------------------------------------------------------------- text ----
+text:
+  labels: [negative, neutral, positive]
+  # One rule for every source that has stars (see CLAUDE.md 5.1).
+  rating_to_label: {1: negative, 2: negative, 3: neutral, 4: positive, 5: positive}
+  min_words: 3
+  per_class_target: 15000         # after balancing, roughly this many reviews per class
+  split: {train: 0.70, val: 0.15, test: 0.15}
+
+  sources:
+    amazon_lecturer:
+      kind: kaggle
+      slug: mehmetisik/amazon-review
+      category: electronics
+      role: train                 # used for train/val/test
+    customer_feedback:
+      kind: kaggle
+      slug: vishweshsalodkar/customer-feedback-dataset
+      category: other
+      role: external_test         # never trained on, only an outside check
+    flipkart:
+      kind: kaggle
+      slug: niraliivaghani/flipkart-product-customer-reviews-dataset
+      category: other
+      role: train
+    amazon2023_electronics:
+      kind: hf_sample
+      repo: McAuley-Lab/Amazon-Reviews-2023
+      file: raw/review_categories/Electronics.jsonl   # 22.6 GB, we only read small pieces
+      category: electronics
+      role: train
+    amazon2023_grocery:
+      kind: hf_sample
+      repo: McAuley-Lab/Amazon-Reviews-2023
+      file: raw/review_categories/Grocery_and_Gourmet_Food.jsonl   # 6.0 GB
+      category: grocery
+      role: train
+
+  # How we sample the huge Amazon 2023 files without downloading them.
+  # The files are sorted by user, so the first N lines would come from only a few
+  # people. Instead we read n_chunks small pieces from random places in the file.
+  hf_sample:
+    n_chunks: 30
+    lines_per_chunk: 10000        # 30 x 10k = 300k lines per category (~200 MB)
+
+  models:
+    minilm: sentence-transformers/all-MiniLM-L6-v2
+    distilbert: distilbert-base-uncased
+    tfidf: {ngram_range: [1, 2], min_df: 2, max_features: 50000}
+
+# -------------------------------------------------------------- images ----
+images:
+  size: 224
+  split: {train: 0.70, val: 0.10, test: 0.20}
+  phash_max_distance: 4           # images closer than this count as near-duplicates
+
+  sources:
+    packages_kaggle:
+      kind: kaggle
+      slug: christianvorhemus/industrial-quality-control-of-packages
+      domain: packages
+    packages_roboflow:
+      kind: roboflow
+      workspace: aadhavs-first-workspace
+      project: damaged-vs-good-packages
+      version: 1
+      format: folder              # classification export: one folder per class
+      domain: packages
+    produce_kaggle:
+      kind: kaggle
+      slug: sriramr/fruits-fresh-and-rotten-for-classification
+      domain: produce
+
+  # Unlabelled customer photos for the website demo only (never for training).
+  demo_photos:
+    max_images: 30
+
+# Which image model runs for each product category (CLAUDE.md section 3).
+routing:
+  electronics: packages
+  grocery: produce
+  default: packages
+
+# ------------------------------------------------------------- fusion -----
+# Starting values only. Phase 6 tunes them on the simulated-orders validation set.
+fusion:
+  weights: {text: 0.5, image: 0.35, tag: 0.15}
+  thresholds: {review: 0.40, urgent: 0.70}
+  n_simulated_orders: 300
+
+# ---------------------------------------------------------------- app -----
+app:
+  max_upload_mb: 10
+  max_batch_rows: 100
+  history_limit: 50
+  db_path: app/predictions.db
