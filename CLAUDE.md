@@ -249,3 +249,6 @@ retail-review-flagging/
 - **Reusable by outsiders.** Someone who clones the repo must be able to use it without reading the code: a clear README quick start, a simple Python API (e.g. `flag_order(text, category, image)`), a command-line script for single reviews and CSV batches, and pinned app requirements.
 - **Compare against existing models.** The presentation should show how our models compare to ready-made models from the internet (see PROGRESS.md for the agreed list).
 - **Fusion weights** get a final review after everything else is built; they can be adjusted then.
+- **Packages data (2026-10-13):** added Roboflow `sih-yna9n/boxcondition-onzuw` (BoxCondition, CC BY 4.0, classification) as a third package source, because the two planned sources are biased (intact = product boxes, damaged = brown cardboard; Kaggle = 3D renders).
+- **Website text model (2026-10-13):** fine-tuned DistilBERT exported to ONNX int8 replaces MiniLM + LR (section 3), if its measured size/RAM/speed fit Render in Phase 5; otherwise fall back to TF-IDF + LR.
+- **Copy detection (Phase 3):** SSCD copy-detection embeddings instead of perceptual hashes (hashes missed rotated copies and wrongly merged different renders); see PROGRESS.md.

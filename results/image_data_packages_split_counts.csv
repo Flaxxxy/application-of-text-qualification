@@ -1,6 +1,8 @@
 source,label,train,val,test,total
-packages_kaggle,damaged,140,14,46,200
-packages_kaggle,intact,136,16,48,200
-packages_roboflow,damaged,165,29,43,237
-packages_roboflow,intact,221,35,55,311
-total,,662,94,192,948
+packages_boxcondition,damaged,453,62,135,650
+packages_boxcondition,intact,458,60,131,649
+packages_kaggle,damaged,138,24,38,200
+packages_kaggle,intact,149,18,33,200
+packages_roboflow,damaged,142,18,38,198
+packages_roboflow,intact,195,36,67,298
+total,,1535,218,442,2195

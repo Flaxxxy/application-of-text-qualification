@@ -255,7 +255,7 @@ def nb_04_image_data():
 
 | Domain | Business question | Sources |
 |---|---|---|
-| packages | was the order damaged in shipping? | Kaggle *Industrial Quality Control of Packages* (3D renders) + Roboflow *Damaged vs good packages* (CC BY 4.0) |
+| packages | was the order damaged in shipping? | Kaggle *Industrial Quality Control of Packages* (3D renders) + Roboflow *Damaged vs good packages* (CC BY 4.0) + Roboflow *BoxCondition* (CC BY 4.0, added because of the bias described below) |
 | produce | is the food spoiled? | Kaggle *Fruits fresh and rotten for classification* (apple, banana, orange) |
 
 **Inputs:** `data/raw/images/` (from `scripts/download_data.py images`).
@@ -328,12 +328,14 @@ print("Images per fruit and class:"); display(produce["subtype_counts"])"""),
 - **Choosing the right copy detector mattered:** the perceptual hash missed rotated copies and wrongly flagged
   different renders; CLIP grouped similar-looking fruits; SSCD, a model made for copy detection, separated copies
   from different photos (checked by eye at several similarity levels).
-- **Packages: 981 → 948 images** (33 copies removed, 2 groups with conflicting labels dropped), split 662 / 94 / 192.
+- **Packages: 4,953 → 2,195 images** (2,758 copies removed, mostly inside BoxCondition; 80 photos appeared in both
+  Roboflow sets and were merged; 4 groups with conflicting labels dropped), split 1,535 / 218 / 442.
   No unreadable files in either domain, and no val/test image is a copy of a train image.
-- **Dataset bias to keep in mind:** in the Roboflow package set, "intact" is mostly shiny product boxes on studio
-  backgrounds and "damaged" mostly brown shipping cardboard, with some label noise; the Kaggle packages are 3D renders
-  of one box on one conveyor belt. Both differ from real customer photos (domain shift). Grad-CAM in Phase 4
-  will show whether the model looks at the damage or at the box type.
+- **Dataset bias, and the fix:** in the first Roboflow set "intact" is mostly shiny product boxes on studio backgrounds
+  and "damaged" mostly brown shipping cardboard (plus some label noise); the Kaggle packages are 3D renders of one box
+  on one conveyor belt. A model could learn "brown cardboard = damaged". We therefore added **BoxCondition**, where both
+  classes are brown cardboard boxes (650 damaged / 649 intact after copy removal), so the model has to learn the damage
+  itself. Grad-CAM in Phase 4 will show where the model looks, and results are reported per source.
 """),
     ]
 

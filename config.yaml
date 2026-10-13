@@ -122,6 +122,13 @@ images:
       version: 1
       format: folder              # classification export: one folder per class
       domain: packages
+    packages_boxcondition:        # added 2026-10-13 (Denis): brown cardboard in BOTH classes
+      kind: roboflow
+      workspace: sih-yna9n
+      project: boxcondition-onzuw
+      version: 1
+      format: folder
+      domain: packages
     produce_kaggle:
       kind: kaggle
       slug: sriramr/fruits-fresh-and-rotten-for-classification

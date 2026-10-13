@@ -1,7 +1,7 @@
 """Build the image datasets: index raw photos -> check -> remove near-duplicates -> resize -> split.
 
 Two domains (CLAUDE.md 5.2), one binary model each:
-    packages: damaged vs intact   (Kaggle + Roboflow, merged)  -> misdeliveries / shipping damage
+    packages: damaged vs intact   (Kaggle renders + 2 Roboflow sets, merged) -> shipping damage
     produce:  rotten  vs fresh    (Kaggle fruits, fruit type kept as metadata) -> product defects
 
 Run everything:   python -m src.data_images
@@ -59,6 +59,22 @@ def index_packages_roboflow() -> pd.DataFrame:
     return pd.DataFrame(rows).assign(source="packages_roboflow", domain="packages")
 
 
+def index_packages_boxcondition() -> pd.DataFrame:
+    """Roboflow BoxCondition: train|valid|test / damagedpackages|undamagedpackages / *.jpg.
+
+    Added because the other two package sources are biased: brown cardboard boxes, the kind
+    customers actually photograph, appear in both classes here, so the model has to learn the
+    damage itself and not "brown cardboard = damaged". Its own split is ignored, like Roboflow's.
+    """
+    root = path("data_raw", "images", "packages_boxcondition")
+    rows = []
+    for p in _images_under(root):
+        folder = p.parent.name.lower()
+        rows.append({"path": p, "label": "intact" if folder.startswith("undamaged") else "damaged",
+                     "subtype": "cardboard photo"})
+    return pd.DataFrame(rows).assign(source="packages_boxcondition", domain="packages")
+
+
 _FRUIT_RE = re.compile(r"^(fresh|rotten)\s*([a-z]+?)s?$")
 
 
@@ -83,7 +99,7 @@ def index_produce_kaggle() -> pd.DataFrame:
 
 def index_domain(domain: str) -> pd.DataFrame:
     """All raw images of one domain in one table."""
-    parts = {"packages": [index_packages_kaggle, index_packages_roboflow],
+    parts = {"packages": [index_packages_kaggle, index_packages_roboflow, index_packages_boxcondition],
              "produce": [index_produce_kaggle]}[domain]
     df = pd.concat([f() for f in parts], ignore_index=True)
     return df[["domain", "source", "label", "subtype", "path"]]
