@@ -128,7 +128,7 @@ ext[["label", "text"]].head(8)"""),
         md("""
 ## Key findings
 
-- **5 sources, 810k raw reviews → 641k after cleaning → 45,000 balanced** (15k per class): 31,499 train / 6,750 val / 6,750 test.
+- **5 sources, 810k raw reviews → 641k after cleaning → 45,000 balanced** (15k per class): 31,499 train / 6,750 val / 6,751 test.
 - **Two label leaks were found and removed**: Flipkart's rating-generated `Review` titles and Amazon's automatic "Five Stars" titles. Keeping them would have inflated accuracy without the model really understanding sentiment.
 - Raw data is heavily skewed to positive (60–80% five stars), so balancing is essential; neutral (3 stars) is the rarest and hardest class.
 - Negative and neutral reviews are longer than positive ones (median 23–24 vs 17 words): unhappy customers explain what went wrong.
@@ -227,7 +227,19 @@ A good tagger fires far more on negative reviews than on positive ones.
         md("""
 ## Key findings
 
-*(Written after all results are in, including the Colab fine-tunes.)*
+*(Fine-tuned DistilBERT/RoBERTa rows appear in the table once the Colab results are imported; this
+section is updated then.)*
+
+- **Simple beats big on our data:** TF-IDF + Logistic Regression (macro-F1 **0.731**) and Naive Bayes (0.724) beat every
+  ready-made internet model, including a 670 MB BERT (nlptown, 0.715), while being ~10,000× faster (0.01 vs 125 ms per review) and 200× smaller.
+- **Ready-made models struggle with "neutral":** the Cardiff RoBERTa reaches F1 0.31 on neutral, and the default HF pipeline
+  can't predict neutral at all (macro-F1 0.48). What counts as "neutral" depends on the data, so models trained on someone else's data don't know our definition.
+- **But ready-made models are strong on clear, unfamiliar text:** on the external Customer Feedback set, both RoBERTa and nlptown score 1.00 and MiniLM 0.99,
+  while TF-IDF drops to 0.88: word counts only know the vocabulary of our training data.
+- **Neutral is the hardest class for every model** (TF-IDF: 62% recall). Negative and positive are almost never swapped (3–4%); the mistakes are mostly "neighbouring" classes.
+- **Many "confident mistakes" are label noise**: "pent are perfect" or "very bad" rated 3 stars. Star ratings are a cheap but imperfect label, which caps every model's score.
+- **Explainability:** TF-IDF + LR looks for sensible words; the negation phrases we kept on purpose ("not good", "not worth", "not work") are among the strongest negative signals, and hedging words ("but", "ok", "however", "though") drive neutral.
+- **Issue tagger:** 27% of negative reviews get at least one tag vs 1.8% of positive ones; refunds/returns and defective products are the most common problems.
 """),
     ]
 

@@ -4,6 +4,7 @@ Usage (from the repo root):
     python scripts/train_text_models.py                      # all local models
     python scripts/train_text_models.py textblob tfidf_logreg
     python scripts/train_text_models.py bench                # the 3 ready-made Hugging Face models
+    python scripts/train_text_models.py bench_nlptown_stars  # just one of them
 
 Outputs:
     models/train/text_<name>.joblib          trained models (git-ignored)
@@ -52,8 +53,10 @@ def main(names: list[str]) -> None:
     models_dir = path("models_train", create=True)
 
     for name in names:
-        if name == "bench":
-            for key in load_config()["text"]["benchmarks"]:
+        if name.startswith("bench"):
+            # "bench" = all ready-made models; "bench_<key>" = just one of them.
+            keys = list(load_config()["text"]["benchmarks"]) if name == "bench" else [name.removeprefix("bench_")]
+            for key in keys:
                 model = HFBenchmarkModel(key)
                 print(f"\n[run] {model.name} ({model.model_name}) on {len(test):,} test reviews, CPU ...")
                 metrics, proba = run_and_score(model, test, ext)

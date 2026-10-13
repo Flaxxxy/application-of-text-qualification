@@ -44,7 +44,7 @@ Running log of what was done, decisions made, and open issues. Newest phase at t
 
 **Key numbers**
 - Raw 810,063 → 641,525 after cleaning (122,581 under 3 words, 13,561 ambiguous texts with different labels, 32,297 duplicates).
-- Balanced 45,000 (15,000 per class) → train 31,499 / val 6,750 / test 6,750.
+- Balanced 45,000 (15,000 per class) → train 31,499 / val 6,750 / test 6,751.
 - External test (Customer Feedback): 75 after dedup (42 positive, 33 negative, no neutral).
 
 **Findings / decisions**
@@ -54,3 +54,33 @@ Running log of what was done, decisions made, and open issues. Newest phase at t
 - Customer Feedback: broken CSV (rows double-quoted), mostly non-retail (music, films, restaurants), no neutral → evaluate on positive vs negative only.
 - Environment: `rrf` was picking up packages from `~/.local`; fixed with `PYTHONNOUSERSITE=1` on the env. pandas 3.0 in use.
 - Distinctive-words chart uses document frequency (one long review said "SP3" 72 times and topped the positive list otherwise).
+
+## Phase 2 — Text models (2026-10-13, in progress: waiting for Colab fine-tunes)
+
+**Done**
+- `src/text_models.py` (one interface for all models + fine-tuning code), `src/evaluate.py` (metrics, metrics.json store, plots, error analysis), `src/issue_tags.py` (7 tags, negation handling).
+- `scripts/train_text_models.py` trains/scores local models and benchmarks; `notebooks/02_text_models.ipynb` executed.
+- `notebooks/colab_03_finetune_text.ipynb` (DistilBERT + RoBERTa fine-tuning), smoke-tested locally on a tiny subset. Named `colab_03_finetune_text` instead of `colab_03_distilbert` because it fine-tunes both.
+- `requirements-colab.txt`: Colab installs only missing packages (full train requirements would reinstall torch/TF and roboflow pins old versions).
+- Tests: 57 passing (text data + issue tagger).
+
+**Results (test set, 6,751 reviews; external = 75 Customer Feedback reviews, pos/neg)**
+
+| model | macro-F1 | external F1 | ms/review (CPU) | size MB |
+|---|---|---|---|---|
+| tfidf_logreg | 0.731 | 0.879 | 0.01 | 3.2 |
+| naive_bayes | 0.724 | 0.906 | 0.01 | 4.0 |
+| bench_nlptown_stars | 0.715 | 1.000 | 125 | 669 |
+| minilm_logreg | 0.696 | 0.987 | 3.0 | 91 |
+| bench_cardiffnlp_roberta | 0.609 | 1.000 | 151 | 499 |
+| textblob | 0.590 | 0.959 | 0.09 | – |
+| bench_hf_default_pipeline | 0.480 | 0.987 | 94 | 268 |
+
+**Findings**
+- Our classical models beat all ready-made models on our test set; ready-made models are weak on "neutral" but perfect on the clear external sentences.
+- Many confident errors are star-label noise ("very bad" rated 3 stars).
+- Issue tagger: any tag on 26.8% of negative vs 1.8% of positive test reviews. Fixed false hits for "replacement" (product sense) and "missing" (emotional sense).
+- Transformers v5 removed `warmup_ratio`; code supports v4 and v5.
+- One HF download failed with a network error; script now supports `bench_<key>` to rerun a single benchmark.
+
+**Open decision (for Denis):** deployed text model. MiniLM + LR (planned) is below TF-IDF on the test set (0.696 vs 0.731) but best on unfamiliar text. Decide after fine-tune results.
