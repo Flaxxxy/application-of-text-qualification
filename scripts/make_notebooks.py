@@ -138,7 +138,219 @@ ext[["label", "text"]].head(8)"""),
     ]
 
 
-NOTEBOOKS = {"01": ("01_text_data.ipynb", nb_01_text_data)}
+def nb_02_text_models():
+    return [
+        md("""
+# 02 · Text models: which sentiment model works best?
+
+**Goal:** compare all sentiment models on the same test set and explain what they learned.
+
+**Models:**
+- *Ours, trained locally:* TextBlob (rules, course baseline), CountVectorizer + Naive Bayes, TF-IDF + Logistic Regression, MiniLM embeddings + Logistic Regression.
+- *Ready-made from the internet, used as they are:* Cardiff RoBERTa (3 classes, trained on tweets), nlptown BERT (1–5 stars), the default Hugging Face `pipeline` model (positive/negative only).
+- *Fine-tuned on our data (Colab GPU):* DistilBERT, and the Cardiff RoBERTa improved on our reviews.
+
+**Inputs:** `data/processed/`, `results/metrics.json` (written by `scripts/train_text_models.py` and the Colab notebook).
+**Outputs:** comparison figures in `results/figures/`.
+
+Main metric: **macro-F1** (average of the three class F1 scores, so neutral counts as much as the others).
+Every model picked its settings on the validation set; the test set was used once, at the end.
+"""),
+        code(SETUP),
+        md("## 1. Comparison table"),
+        code("""from src.evaluate import comparison_table, import_colab_metrics
+print("Imported from Colab:", import_colab_metrics() or "nothing yet")
+table = comparison_table("text")
+table"""),
+        code("""from src.evaluate import plot_model_comparison
+plot_model_comparison(table, "test macro-F1");"""),
+        md("""
+**External test (Customer Feedback, 75 short reviews, positive vs negative only).** These are short, very
+clear sentences, mostly not about products. It checks whether a model still works on unfamiliar text.
+"""),
+        code("""plot_model_comparison(table, "external F1 (pos/neg)", filename="text_model_comparison_external");"""),
+        md("## 2. Results per source (test set macro-F1)"),
+        code("""from src.evaluate import load_metrics
+per_source = pd.DataFrame({name: {src: v["macro_f1"] for src, v in m["test_per_source"].items()}
+                           for name, m in load_metrics()["text"].items()}).T
+per_source.loc[table.index]"""),
+        md("## 3. Confusion matrices: where do the models get confused?"),
+        code("""from pathlib import Path
+figs = Path("../results/figures")
+for name in table.index:
+    f = figs / f"cm_text_{name}.png"
+    if f.exists():
+        display(Image(filename=str(f), width=330))"""),
+        md("""
+## 4. Explainability: what does TF-IDF + Logistic Regression look for?
+
+Logistic Regression gives every word (and word pair) a weight per class. The biggest weights are
+the words that push a review towards that class. Word pairs like "not worth" or "stopped working"
+are the reason we used 1–2 grams.
+"""),
+        code("""import joblib
+from src.config import path
+from src.text_models import TfidfLogRegModel
+from src.evaluate import plot_top_words
+tfidf = TfidfLogRegModel()
+tfidf.pipe = joblib.load(path("models_train") / "text_tfidf_logreg.joblib")
+plot_top_words(tfidf.top_words(15));"""),
+        md("""
+## 5. Error analysis: the most confident mistakes
+
+Reviews where TF-IDF + LR was *sure* and still wrong. These show the limits of a word-counting model and of star-based labels.
+"""),
+        code("""from src.evaluate import misclassified_examples
+test = pd.read_csv("../data/processed/text_test.csv")
+misclassified_examples(test, "tfidf_logreg", n=10)"""),
+        md("""
+## 6. Issue tagger: *what* went wrong
+
+Sentiment says how unhappy a customer is; the tagger (`src/issue_tags.py`) finds concrete problems
+and shows the exact phrase that triggered each tag. It handles negation ("the box was **not** damaged" → no tag).
+"""),
+        code("""from src.issue_tags import tag_issues
+examples = [
+    "The box arrived crushed and the jar inside leaked everywhere. I want a refund.",
+    "Wrong size, not what I ordered. Returned it.",
+    "Stopped working after a week, and the replacement never arrived.",
+    "The bread was moldy and past its best before date.",
+    "Box was not damaged at all, great packaging, fast delivery!",
+]
+pd.DataFrame({"review": examples, "tags found (phrase)": [tag_issues(e) for e in examples]})"""),
+        md("""
+There are no ground-truth tags, so as a sanity check we look at how often each tag fires per sentiment class.
+A good tagger fires far more on negative reviews than on positive ones.
+"""),
+        code("""from src.issue_tags import tag_rates
+(tag_rates(test) * 100).round(1).rename(columns=lambda c: c + " %")"""),
+        md("""
+## Key findings
+
+*(Written after all results are in, including the Colab fine-tunes.)*
+"""),
+    ]
+
+
+COLAB_SETUP = '''# ---- Setup: GPU check, Google Drive, code, packages ----
+import os, subprocess, sys
+from pathlib import Path
+
+gpu = subprocess.run("nvidia-smi --query-gpu=name --format=csv,noheader", shell=True,
+                     capture_output=True, text=True).stdout.strip()
+assert gpu, "No GPU! Menu: Runtime -> Change runtime type -> T4 GPU, then run again."
+print("GPU:", gpu)
+
+from google.colab import drive, userdata
+drive.mount("/content/drive")
+DRIVE = Path("/content/drive/MyDrive/rrf")          # project folder on your Drive
+REPO = Path("/content/application-of-text-qualification")
+
+# The GitHub repo is private, so cloning needs a token stored in Colab "Secrets" (key icon
+# in the left sidebar) under the name GITHUB_TOKEN, with notebook access switched on.
+if not REPO.exists():
+    token = userdata.get("GITHUB_TOKEN")
+    subprocess.run(["git", "clone", "-q",
+                    f"https://{token}@github.com/Flaxxxy/application-of-text-qualification.git", str(REPO)],
+                   check=True)
+else:
+    subprocess.run(["git", "-C", str(REPO), "pull", "-q"], check=True)
+os.chdir(REPO)
+sys.path.insert(0, str(REPO))
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", "requirements-colab.txt"], check=True)
+print("ready:", REPO)'''
+
+
+def nb_colab_03_finetune_text():
+    return [
+        md("""
+# Colab 03 · Fine-tune transformers for review sentiment (DistilBERT + RoBERTa)
+
+**Goal:** fine-tune two transformers on our 31.5k training reviews and score them exactly like the local models.
+- **DistilBERT** (`distilbert-base-uncased`): a general language model with a new 3-class head.
+- **RoBERTa** (`cardiffnlp/twitter-roberta-base-sentiment-latest`): already a sentiment model (trained on tweets). We tested it *as it is* locally; here we **improve it on our review data**, so the slides can show before vs after.
+
+**Runtime:** GPU (Runtime → Change runtime type → T4 GPU). About 25–35 minutes in total.
+
+**Inputs (on your Google Drive):** `MyDrive/rrf/data/processed/text_{train,val,test,external_test}.csv`
+
+**Outputs:** metrics, predictions and confusion matrices are copied to `MyDrive/rrf/results/`; the fine-tuned models are saved to `MyDrive/rrf/models/` (too big for git).
+"""),
+        code(COLAB_SETUP),
+        md("## 1. Get the processed data from Drive"),
+        code('''import shutil
+src_dir, dst_dir = DRIVE / "data" / "processed", REPO / "data" / "processed"
+dst_dir.mkdir(parents=True, exist_ok=True)
+for name in ["train", "val", "test", "external_test"]:
+    shutil.copy(src_dir / f"text_{name}.csv", dst_dir)
+
+import pandas as pd
+data = {s: pd.read_csv(dst_dir / f"text_{s}.csv") for s in ["train", "val", "test", "external_test"]}
+{k: len(v) for k, v in data.items()}'''),
+        md("""
+## 2. Fine-tune and evaluate both models
+
+The training code is `finetune_transformer()` in `src/text_models.py`; scoring uses the same
+`run_and_score()` as every local model, so the numbers are directly comparable.
+Speed is not reported here, because a GPU is not comparable to the CPU timings of the local models.
+"""),
+        code('''import json
+from src.config import load_config, path, set_seed
+from src.evaluate import plot_confusion_matrix
+from src.text_models import FineTunedModel, finetune_transformer, run_and_score, save_predictions
+
+set_seed()
+ft = load_config()["text"]["finetune"]
+results = {}
+for name, base_model in ft["models"].items():
+    print(f"\\n===== {name}  ({base_model}) =====")
+    out_dir = DRIVE / "models" / f"text_{name}"
+    trainer = finetune_transformer(base_model, data["train"], data["val"], f"/content/tmp_{name}",
+                                   epochs=ft["epochs"], max_length=ft["max_length"],
+                                   batch_size=ft["batch_size"], lr=ft["learning_rate"])
+    trainer.save_model(str(out_dir))          # best epoch (by validation macro-F1) + tokenizer
+    model = FineTunedModel(name, out_dir, max_length=ft["max_length"])
+    metrics, proba = run_and_score(model, data["test"], data["external_test"])
+    metrics.update({"ms_per_review": None, "base_model": base_model,
+                    "chosen_on_val": {"epochs": ft["epochs"], "lr": ft["learning_rate"],
+                                      "best_val_macro_f1": round(trainer.state.best_metric, 4)}})
+    path("results", "colab", create=True).joinpath(f"metrics_text_{name}.json").write_text(json.dumps(metrics, indent=2))
+    save_predictions(name, data["test"], proba)
+    plot_confusion_matrix(metrics["test"]["confusion_matrix"], metrics["test"]["labels"],
+                          f"{name}  (macro-F1 {metrics['test']['macro_f1']:.3f})", f"cm_text_{name}")
+    results[name] = metrics
+    print(f"{name}: test macro-F1 {metrics['test']['macro_f1']:.4f} | external F1 {metrics['external']['macro_f1']:.4f}")'''),
+        code('''pd.DataFrame({n: {"test macro-F1": m["test"]["macro_f1"], "test accuracy": m["test"]["accuracy"],
+                  "external F1 (pos/neg)": m["external"]["macro_f1"]} for n, m in results.items()}).T'''),
+        md("## 3. Copy results to Drive and list what to bring back"),
+        code('''files = []
+for name in results:
+    files += [f"results/colab/metrics_text_{name}.json",
+              f"results/predictions/text_{name}_test.csv",
+              f"results/figures/cm_text_{name}.png"]
+for f in files:
+    dst = DRIVE / f
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(REPO / f, dst)
+
+print("Copy these files from Google Drive (MyDrive/rrf/...) into the SAME paths in the repo:\\n")
+for f in files:
+    print("  ", f)
+print("\\nThe fine-tuned models stay on Drive in MyDrive/rrf/models/ (not needed in the repo).")'''),
+        md("""
+## Key findings
+
+*(Filled in after the run, from the table above: which model is best, how much fine-tuning
+improved RoBERTa compared to using it as it is, and where the models still make mistakes.)*
+"""),
+    ]
+
+
+NOTEBOOKS = {
+    "01": ("01_text_data.ipynb", nb_01_text_data),
+    "02": ("02_text_models.ipynb", nb_02_text_models),
+    "colab03": ("colab_03_finetune_text.ipynb", nb_colab_03_finetune_text),
+}
 
 
 def main() -> None:

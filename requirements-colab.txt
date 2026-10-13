@@ -1,0 +1,14 @@
+# Extra packages for Google Colab only.
+# Colab already ships torch, tensorflow, transformers, scikit-learn, pandas, nltk, textblob
+# built for its GPU. Installing the full requirements-train.txt on top would take ~10 minutes
+# and `roboflow` pins old library versions that can break Colab's setup, so we add only
+# what is missing.
+datasets
+accelerate
+sentence-transformers
+split-folders
+imagehash
+onnx
+onnxruntime
+tf2onnx
+python-dotenv

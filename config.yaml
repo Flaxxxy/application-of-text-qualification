@@ -66,9 +66,21 @@ text:
 
   models:
     minilm: sentence-transformers/all-MiniLM-L6-v2
+    minilm_max_length: 256        # tokens; the ONNX export in Phase 5 must use the same value
     distilbert: distilbert-base-uncased
     tfidf: {ngram_range: [1, 2], min_df: 2, max_features: 50000}
     roberta: cardiffnlp/twitter-roberta-base-sentiment-latest   # also fine-tuned on Colab
+
+  # Fine-tuning on Colab (notebooks/colab_03_finetune_text.ipynb). Same settings for both
+  # models so the comparison is fair.
+  finetune:
+    models:
+      distilbert_finetuned: distilbert-base-uncased
+      roberta_finetuned: cardiffnlp/twitter-roberta-base-sentiment-latest
+    epochs: 2
+    max_length: 256
+    batch_size: 32
+    learning_rate: 2.0e-5
 
   # Ready-made models from the internet, tested as they are (no training) for the
   # "our model vs others" comparison. `labels` says how their outputs map to ours.

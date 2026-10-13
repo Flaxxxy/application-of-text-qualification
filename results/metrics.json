@@ -1,0 +1,452 @@
+{
+  "text": {
+    "textblob": {
+      "test": {
+        "n": 6751,
+        "accuracy": 0.5913,
+        "macro_f1": 0.5896,
+        "per_class": {
+          "negative": {
+            "precision": 0.6343,
+            "recall": 0.6622,
+            "f1": 0.648,
+            "support": 2250
+          },
+          "neutral": {
+            "precision": 0.4581,
+            "recall": 0.4347,
+            "f1": 0.4461,
+            "support": 2250
+          },
+          "positive": {
+            "precision": 0.6723,
+            "recall": 0.677,
+            "f1": 0.6746,
+            "support": 2251
+          }
+        },
+        "confusion_matrix": [
+          [
+            1490,
+            607,
+            153
+          ],
+          [
+            682,
+            978,
+            590
+          ],
+          [
+            177,
+            550,
+            1524
+          ]
+        ],
+        "labels": [
+          "negative",
+          "neutral",
+          "positive"
+        ]
+      },
+      "test_per_source": {
+        "amazon2023_electronics": {
+          "n": 2206,
+          "accuracy": 0.563,
+          "macro_f1": 0.5681
+        },
+        "amazon2023_grocery": {
+          "n": 2206,
+          "accuracy": 0.5907,
+          "macro_f1": 0.5914
+        },
+        "amazon_lecturer": {
+          "n": 133,
+          "accuracy": 0.5489,
+          "macro_f1": 0.525
+        },
+        "flipkart": {
+          "n": 2206,
+          "accuracy": 0.6228,
+          "macro_f1": 0.6034
+        }
+      },
+      "external": {
+        "n": 75,
+        "accuracy": 0.96,
+        "macro_f1": 0.9593,
+        "per_class": {
+          "negative": {
+            "precision": 0.9688,
+            "recall": 0.9394,
+            "f1": 0.9538,
+            "support": 33
+          },
+          "positive": {
+            "precision": 0.9535,
+            "recall": 0.9762,
+            "f1": 0.9647,
+            "support": 42
+          }
+        },
+        "confusion_matrix": [
+          [
+            31,
+            2
+          ],
+          [
+            1,
+            41
+          ]
+        ],
+        "labels": [
+          "negative",
+          "positive"
+        ]
+      },
+      "type": "rule-based baseline",
+      "chosen_on_val": {
+        "low": 0.0,
+        "high": 0.3
+      },
+      "ms_per_review": 0.09,
+      "size_mb": null,
+      "train_seconds": 8.6
+    },
+    "naive_bayes": {
+      "test": {
+        "n": 6751,
+        "accuracy": 0.7234,
+        "macro_f1": 0.7244,
+        "per_class": {
+          "negative": {
+            "precision": 0.7289,
+            "recall": 0.7076,
+            "f1": 0.7181,
+            "support": 2250
+          },
+          "neutral": {
+            "precision": 0.6179,
+            "recall": 0.6476,
+            "f1": 0.6324,
+            "support": 2250
+          },
+          "positive": {
+            "precision": 0.8307,
+            "recall": 0.8152,
+            "f1": 0.8229,
+            "support": 2251
+          }
+        },
+        "confusion_matrix": [
+          [
+            1592,
+            582,
+            76
+          ],
+          [
+            495,
+            1457,
+            298
+          ],
+          [
+            97,
+            319,
+            1835
+          ]
+        ],
+        "labels": [
+          "negative",
+          "neutral",
+          "positive"
+        ]
+      },
+      "test_per_source": {
+        "amazon2023_electronics": {
+          "n": 2206,
+          "accuracy": 0.7153,
+          "macro_f1": 0.7207
+        },
+        "amazon2023_grocery": {
+          "n": 2206,
+          "accuracy": 0.7357,
+          "macro_f1": 0.7361
+        },
+        "amazon_lecturer": {
+          "n": 133,
+          "accuracy": 0.7519,
+          "macro_f1": 0.5961
+        },
+        "flipkart": {
+          "n": 2206,
+          "accuracy": 0.7176,
+          "macro_f1": 0.7165
+        }
+      },
+      "external": {
+        "n": 75,
+        "accuracy": 0.9067,
+        "macro_f1": 0.9061,
+        "per_class": {
+          "negative": {
+            "precision": 0.8611,
+            "recall": 0.9394,
+            "f1": 0.8986,
+            "support": 33
+          },
+          "positive": {
+            "precision": 0.9487,
+            "recall": 0.881,
+            "f1": 0.9136,
+            "support": 42
+          }
+        },
+        "confusion_matrix": [
+          [
+            31,
+            2
+          ],
+          [
+            5,
+            37
+          ]
+        ],
+        "labels": [
+          "negative",
+          "positive"
+        ]
+      },
+      "type": "CountVectorizer + MultinomialNB",
+      "chosen_on_val": {
+        "alpha": 1.0,
+        "val_macro_f1": 0.7318
+      },
+      "ms_per_review": 0.01,
+      "size_mb": 4.0,
+      "train_seconds": 3.1
+    },
+    "tfidf_logreg": {
+      "test": {
+        "n": 6751,
+        "accuracy": 0.7312,
+        "macro_f1": 0.7309,
+        "per_class": {
+          "negative": {
+            "precision": 0.7334,
+            "recall": 0.7556,
+            "f1": 0.7443,
+            "support": 2250
+          },
+          "neutral": {
+            "precision": 0.6336,
+            "recall": 0.6218,
+            "f1": 0.6276,
+            "support": 2250
+          },
+          "positive": {
+            "precision": 0.8256,
+            "recall": 0.8161,
+            "f1": 0.8208,
+            "support": 2251
+          }
+        },
+        "confusion_matrix": [
+          [
+            1700,
+            480,
+            70
+          ],
+          [
+            533,
+            1399,
+            318
+          ],
+          [
+            85,
+            329,
+            1837
+          ]
+        ],
+        "labels": [
+          "negative",
+          "neutral",
+          "positive"
+        ]
+      },
+      "test_per_source": {
+        "amazon2023_electronics": {
+          "n": 2206,
+          "accuracy": 0.7167,
+          "macro_f1": 0.7189
+        },
+        "amazon2023_grocery": {
+          "n": 2206,
+          "accuracy": 0.7416,
+          "macro_f1": 0.7422
+        },
+        "amazon_lecturer": {
+          "n": 133,
+          "accuracy": 0.812,
+          "macro_f1": 0.7291
+        },
+        "flipkart": {
+          "n": 2206,
+          "accuracy": 0.7303,
+          "macro_f1": 0.7284
+        }
+      },
+      "external": {
+        "n": 75,
+        "accuracy": 0.88,
+        "macro_f1": 0.8792,
+        "per_class": {
+          "negative": {
+            "precision": 0.8333,
+            "recall": 0.9091,
+            "f1": 0.8696,
+            "support": 33
+          },
+          "positive": {
+            "precision": 0.9231,
+            "recall": 0.8571,
+            "f1": 0.8889,
+            "support": 42
+          }
+        },
+        "confusion_matrix": [
+          [
+            30,
+            3
+          ],
+          [
+            6,
+            36
+          ]
+        ],
+        "labels": [
+          "negative",
+          "positive"
+        ]
+      },
+      "type": "TF-IDF (1-2 grams) + Logistic Regression",
+      "chosen_on_val": {
+        "C": 1.0,
+        "val_macro_f1": 0.7431
+      },
+      "ms_per_review": 0.01,
+      "size_mb": 3.2,
+      "train_seconds": 9.9
+    },
+    "minilm_logreg": {
+      "test": {
+        "n": 6751,
+        "accuracy": 0.6968,
+        "macro_f1": 0.6956,
+        "per_class": {
+          "negative": {
+            "precision": 0.7097,
+            "recall": 0.7236,
+            "f1": 0.7165,
+            "support": 2250
+          },
+          "neutral": {
+            "precision": 0.5907,
+            "recall": 0.5676,
+            "f1": 0.5789,
+            "support": 2250
+          },
+          "positive": {
+            "precision": 0.7839,
+            "recall": 0.7992,
+            "f1": 0.7915,
+            "support": 2251
+          }
+        },
+        "confusion_matrix": [
+          [
+            1628,
+            533,
+            89
+          ],
+          [
+            566,
+            1277,
+            407
+          ],
+          [
+            100,
+            352,
+            1799
+          ]
+        ],
+        "labels": [
+          "negative",
+          "neutral",
+          "positive"
+        ]
+      },
+      "test_per_source": {
+        "amazon2023_electronics": {
+          "n": 2206,
+          "accuracy": 0.6741,
+          "macro_f1": 0.6726
+        },
+        "amazon2023_grocery": {
+          "n": 2206,
+          "accuracy": 0.7085,
+          "macro_f1": 0.7082
+        },
+        "amazon_lecturer": {
+          "n": 133,
+          "accuracy": 0.782,
+          "macro_f1": 0.6906
+        },
+        "flipkart": {
+          "n": 2206,
+          "accuracy": 0.7026,
+          "macro_f1": 0.703
+        }
+      },
+      "external": {
+        "n": 75,
+        "accuracy": 0.9867,
+        "macro_f1": 0.9865,
+        "per_class": {
+          "negative": {
+            "precision": 0.9706,
+            "recall": 1.0,
+            "f1": 0.9851,
+            "support": 33
+          },
+          "positive": {
+            "precision": 1.0,
+            "recall": 0.9762,
+            "f1": 0.988,
+            "support": 42
+          }
+        },
+        "confusion_matrix": [
+          [
+            33,
+            0
+          ],
+          [
+            1,
+            41
+          ]
+        ],
+        "labels": [
+          "negative",
+          "positive"
+        ]
+      },
+      "type": "MiniLM embeddings + Logistic Regression",
+      "chosen_on_val": {
+        "C": 1.0,
+        "val_macro_f1": 0.6921
+      },
+      "ms_per_review": 3.03,
+      "size_mb": 90.9,
+      "train_seconds": 128.1
+    }
+  }
+}
