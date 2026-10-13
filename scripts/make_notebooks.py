@@ -258,9 +258,16 @@ drive.mount("/content/drive")
 DRIVE = Path("/content/drive/MyDrive/rrf")          # project folder on your Drive
 REPO = Path("/content/application-of-text-qualification")
 
-# The GitHub repo is private, so cloning needs a token stored in Colab "Secrets" (key icon
-# in the left sidebar) under the name GITHUB_TOKEN, with notebook access switched on.
-if not REPO.exists():
+# Get the project code. Two ways, because the GitHub repo is private:
+#  A) code.zip on Drive (MyDrive/rrf/code.zip, made with `python scripts/make_code_zip.py`): no token needed
+#  B) git clone with a token saved in Colab "Secrets" (key icon, left sidebar) as GITHUB_TOKEN
+CODE_ZIP = DRIVE / "code.zip"
+if CODE_ZIP.exists():
+    import shutil, zipfile
+    shutil.rmtree(REPO, ignore_errors=True)
+    zipfile.ZipFile(CODE_ZIP).extractall(REPO)
+    print("code from", CODE_ZIP)
+elif not REPO.exists():
     token = userdata.get("GITHUB_TOKEN")
     subprocess.run(["git", "clone", "-q",
                     f"https://{token}@github.com/Flaxxxy/application-of-text-qualification.git", str(REPO)],
