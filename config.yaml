@@ -25,6 +25,7 @@ text:
   rating_to_label: {1: negative, 2: negative, 3: neutral, 4: positive, 5: positive}
   min_words: 3
   per_class_target: 15000         # after balancing, roughly this many reviews per class
+  max_class_ratio: 3.0            # inside one source, no class > 3x its smallest class
   split: {train: 0.70, val: 0.15, test: 0.15}
 
   sources:
@@ -67,6 +68,20 @@ text:
     minilm: sentence-transformers/all-MiniLM-L6-v2
     distilbert: distilbert-base-uncased
     tfidf: {ngram_range: [1, 2], min_df: 2, max_features: 50000}
+    roberta: cardiffnlp/twitter-roberta-base-sentiment-latest   # also fine-tuned on Colab
+
+  # Ready-made models from the internet, tested as they are (no training) for the
+  # "our model vs others" comparison. `labels` says how their outputs map to ours.
+  benchmarks:
+    cardiffnlp_roberta:
+      model: cardiffnlp/twitter-roberta-base-sentiment-latest
+      labels: {negative: negative, neutral: neutral, positive: positive}
+    nlptown_stars:
+      model: nlptown/bert-base-multilingual-uncased-sentiment
+      labels: {1 star: negative, 2 stars: negative, 3 stars: neutral, 4 stars: positive, 5 stars: positive}
+    hf_default_pipeline:
+      model: distilbert/distilbert-base-uncased-finetuned-sst-2-english
+      labels: {NEGATIVE: negative, POSITIVE: positive}   # binary: it can never say "neutral"
 
 # -------------------------------------------------------------- images ----
 images:

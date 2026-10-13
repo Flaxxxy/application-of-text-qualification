@@ -24,6 +24,7 @@ import json
 import os
 import random
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -141,6 +142,38 @@ def _remote_size(url: str) -> int:
     return int(r.headers["Content-Length"])
 
 
+def _read_chunk(url: str, offset: int, n_lines: int, retries: int = 4) -> tuple[list[str], int]:
+    """Read n_lines complete JSON lines starting at a byte offset, retrying on network errors.
+
+    Lines are collected in memory and returned only when the chunk is complete, so a
+    failed attempt never leaves half a chunk (or duplicates) in the output file.
+    """
+    for attempt in range(1, retries + 1):
+        try:
+            lines_out, bad = [], 0
+            with requests.get(url, headers={"Range": f"bytes={offset}-"}, stream=True, timeout=60) as r:
+                r.raise_for_status()
+                lines = r.iter_lines(decode_unicode=False)
+                next(lines, None)  # the first line is cut in the middle by the random offset
+                for _ in range(n_lines):
+                    raw = next(lines, None)
+                    if raw is None:
+                        break
+                    try:
+                        json.loads(raw)  # keep only complete, valid JSON lines
+                    except ValueError:
+                        bad += 1
+                        continue
+                    lines_out.append(raw.decode("utf-8"))
+            return lines_out, bad
+        except requests.RequestException as e:
+            if attempt == retries:
+                raise
+            print(f"[retry] offset {offset}: {type(e).__name__}, attempt {attempt + 1}/{retries}")
+            time.sleep(5 * attempt)
+    return [], 0  # not reached
+
+
 def download_hf_sample(name: str, src: dict[str, Any], out_root: Path, allow_large: bool, check: bool) -> None:
     """Read `n_chunks` pieces of `lines_per_chunk` lines from random places in a huge jsonl.
 
@@ -173,22 +206,10 @@ def download_hf_sample(name: str, src: dict[str, Any], out_root: Path, allow_lar
     kept = bad = 0
     with open(out_file, "w", encoding="utf-8") as f:
         for offset in tqdm(offsets, desc=f"{name} chunks"):
-            headers = {"Range": f"bytes={offset}-"}
-            with requests.get(url, headers=headers, stream=True, timeout=60) as r:
-                r.raise_for_status()
-                lines = r.iter_lines(decode_unicode=False)
-                next(lines, None)  # the first line is cut in the middle by the random offset
-                for _ in range(lines_per_chunk):
-                    raw = next(lines, None)
-                    if raw is None:
-                        break
-                    try:
-                        json.loads(raw)  # keep only complete, valid JSON lines
-                    except ValueError:
-                        bad += 1
-                        continue
-                    f.write(raw.decode("utf-8") + "\n")
-                    kept += 1
+            chunk, chunk_bad = _read_chunk(url, offset, lines_per_chunk)
+            f.writelines(line + "\n" for line in chunk)
+            kept += len(chunk)
+            bad += chunk_bad
     print(f"[done] {name}: {kept:,} reviews saved to {out_file} ({bad} broken lines skipped)")
     _done_marker(out).touch()
 

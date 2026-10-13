@@ -1,0 +1,5 @@
+,step,removed,left
+0,no valid label,3,809964
+1,< 3 words,122581,687383
+2,"same text, different labels",13561,673822
+3,duplicate text,32297,641525

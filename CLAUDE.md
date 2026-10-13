@@ -241,3 +241,11 @@ retail-review-flagging/
 - Ask before: downloading anything > 2 GB, installing large packages, changing the design in section 3, or dropping a dataset.
 - If something fails (broken link, bad labels, memory too high), explain the problem in plain words and propose 1–2 options. Don't silently work around it.
 - Write short and simple. I prefer step-by-step explanations alongside the code.
+
+## 11. Additions agreed during the project
+
+- **Repo:** folder and GitHub repo are both `application-of-text-qualification` (personal GitHub, private). The `retail-review-flagging/` name in section 9 just means the repo root.
+- **Presentation-ready.** The final result must support a clear live demo: one command to start the app, bundled demo orders that show every fusion rule, and screens a non-technical audience understands.
+- **Reusable by outsiders.** Someone who clones the repo must be able to use it without reading the code: a clear README quick start, a simple Python API (e.g. `flag_order(text, category, image)`), a command-line script for single reviews and CSV batches, and pinned app requirements.
+- **Compare against existing models.** The presentation should show how our models compare to ready-made models from the internet (see PROGRESS.md for the agreed list).
+- **Fusion weights** get a final review after everything else is built; they can be adjusted then.
