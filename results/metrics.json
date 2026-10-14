@@ -1633,5 +1633,78 @@
       "size_mb": 13.9,
       "trained_on": "local CPU (Mac), same code and seed as Colab"
     }
+  },
+  "deploy": {
+    "summary": {
+      "files_mb": {
+        "settings.json": 0.0,
+        "image_packages.onnx": 8.9,
+        "tokenizer.json": 0.7,
+        "image_produce.onnx": 8.9,
+        "text_distilbert.int8.onnx": 67.3
+      },
+      "deploy_folder_mb": 85.9,
+      "text_int8_test": {
+        "macro_f1": 0.7678,
+        "accuracy": 0.7667,
+        "external_macro_f1": 1.0,
+        "pytorch_fp32_macro_f1": 0.7681,
+        "per_class": {
+          "negative": {
+            "precision": 0.767,
+            "recall": 0.7622,
+            "f1": 0.7646,
+            "support": 2250
+          },
+          "neutral": {
+            "precision": 0.6585,
+            "recall": 0.6831,
+            "f1": 0.6706,
+            "support": 2250
+          },
+          "positive": {
+            "precision": 0.8822,
+            "recall": 0.8547,
+            "f1": 0.8682,
+            "support": 2251
+          }
+        },
+        "confusion_matrix": [
+          [
+            1715,
+            504,
+            31
+          ],
+          [
+            487,
+            1537,
+            226
+          ],
+          [
+            34,
+            293,
+            1924
+          ]
+        ]
+      },
+      "parity_50_samples": {
+        "text_int8_max_abs_diff": 0.151,
+        "text_int8_mean_abs_diff": 0.0217,
+        "text_same_label": 1.0,
+        "text_fp32_onnx_max_abs_diff": 1.07e-06,
+        "packages_max_abs_diff": 1.37e-06,
+        "produce_max_abs_diff": 4.17e-07,
+        "image_same_decision": 1.0
+      },
+      "speed": {
+        "text_ms_per_review_1_thread_mac": 14.4
+      },
+      "memory_mb": {
+        "python_start": 20,
+        "models_loaded": 191,
+        "after_text_and_two_images": 224
+      },
+      "measured_on": "2026-10-14, MacBook (Apple silicon), onnxruntime 1.31"
+    }
   }
 }

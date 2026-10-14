@@ -1,0 +1,39 @@
+{
+  "text": {
+    "model": "text_distilbert.int8.onnx",
+    "tokenizer": "tokenizer.json",
+    "labels": [
+      "negative",
+      "neutral",
+      "positive"
+    ],
+    "max_length": 256
+  },
+  "images": {
+    "packages": {
+      "model": "image_packages.onnx",
+      "labels": [
+        "intact",
+        "damaged"
+      ],
+      "threshold": 0.4069,
+      "size": 224,
+      "input": "RGB, resized (stretch) to size x size, float32 0-255"
+    },
+    "produce": {
+      "model": "image_produce.onnx",
+      "labels": [
+        "fresh",
+        "rotten"
+      ],
+      "threshold": 0.3371,
+      "size": 224,
+      "input": "RGB, resized (stretch) to size x size, float32 0-255"
+    }
+  },
+  "routing": {
+    "electronics": "packages",
+    "grocery": "produce",
+    "default": "packages"
+  }
+}

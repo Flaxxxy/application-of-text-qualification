@@ -145,3 +145,17 @@ Packages after adding it: 4,953 raw → 2,195 unique (BoxCondition 650 damaged /
 | produce | CLIP zero-shot | 0.716 | 0.969 | 0.715 |
 
 Packages MobileNetV2 per source: BoxCondition 0.894, Roboflow 0.800, Kaggle renders 0.656 (Grad-CAM: looks at the conveyor belt on renders). Produce per fruit: banana 1.000, orange 0.978, apple 0.952.
+
+## Phase 5 — Export for deployment (2026-10-14, checkpoint)
+
+**Done**
+- DistilBERT folder downloaded from Drive (zip) → `models/train/text_distilbert_finetuned/`; local predictions = Colab predictions (max diff 5e-5).
+- `src/export_onnx.py`: DistilBERT → ONNX (eager attention, opset 17) → dynamic int8; MobileNetV2 (.keras) → ONNX via `model.export(format="onnx")` (float32). `settings.json` (labels, max length 256, image size, tuned thresholds, routing).
+- `src/inference.py`: `Predictor` with `TextSentiment` + `ImageChecker`, only onnxruntime/tokenizers/numpy/Pillow; returns probabilities, label, issue tags, image P(bad) + decision.
+- `tests/test_inference_parity.py` (+ `tests/fixtures/parity_reference.npz`): parity and "no heavy imports" checks. 62 tests pass.
+
+**Numbers** (also in `results/metrics.json` → `deploy`)
+- Sizes: text_distilbert.int8.onnx 67.3 MB (fp32 267.9 MB), image_packages.onnx 8.9 MB, image_produce.onnx 8.9 MB, tokenizer 0.7 MB → **models/deploy 82 MB** (< 100 MB).
+- Parity (50 samples): images max |diff| ≤ 1.4e-6, same decisions; text fp32 ONNX 1.1e-6 (so preprocessing is exact); text int8 max 0.151 / mean 0.022, same label 100%.
+- int8 DistilBERT on the full test set: **macro-F1 0.7678** (PyTorch 0.7681), external 1.00.
+- Speed: 14.4 ms per review, 1 thread (Mac). Memory: 224 MB RSS with all models loaded and used (target < 450 MB).
