@@ -1,31 +1,45 @@
 {% extends "base.html" %}
-{% from "_macros.html" import status_badge, pct %}
+{% from "_macros.html" import status_badge, pct, SENTIMENT %}
 {% block title %}History{% endblock %}
+{% block pretitle %}Log{% endblock %}
+{% block heading %}History{% endblock %}
 {% block content %}
-<h1>History</h1>
-<p class="muted">The last {{ limit }} orders checked on this server (stored in SQLite; reset when the server is redeployed).</p>
-{% if rows %}
-<div class="table-wrap">
-  <table>
-    <thead><tr><th>Time (UTC)</th><th>From</th><th>Order</th><th>Status</th><th class="num">Risk</th><th>Sentiment</th><th>Photo</th><th>Review</th><th>Reasons</th></tr></thead>
-    <tbody>
-    {% for r in rows %}
-      <tr>
-        <td class="small">{{ r.created_at[:16] }}</td>
-        <td class="small">{{ r.source }}</td>
-        <td>{{ r.order_id }}<div class="muted small">{{ r.category }}</div></td>
-        <td>{{ status_badge(r.status) }}</td>
-        <td class="num">{{ "%.2f"|format(r.risk) }}</td>
-        <td>{{ r.sentiment }}</td>
-        <td>{% if r.has_photo %}{{ r.photo_result }} <span class="muted small">({{ pct(r.p_bad) }})</span>{% else %}<span class="muted">–</span>{% endif %}</td>
-        <td class="review-cell small">{{ r.review_text|truncate(110) }}</td>
-        <td class="small">{{ r.reasons.split(" | ")[0] }}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-database me-2"></i>Last {{ limit }} orders checked</h3>
+    <div class="card-actions text-secondary small">Stored in SQLite on this server; reset when the server is redeployed.</div>
+  </div>
+  {% if rows %}
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table">
+      <thead><tr><th>Time (UTC)</th><th>From</th><th>Order</th><th>Status</th><th class="text-end">Risk</th><th>Sentiment</th><th>Photo</th><th>Review</th><th>Main reason</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        {% set sc, si = SENTIMENT[r.sentiment] %}
+        <tr data-status="{{ r.status }}">
+          <td class="text-secondary small text-nowrap">{{ r.created_at[:16] }}</td>
+          <td><span class="badge bg-secondary-lt">{{ r.source }}</span></td>
+          <td><div class="fw-bold text-nowrap">{{ r.order_id }}</div><div class="text-secondary small">{{ r.category }}</div></td>
+          <td>{{ status_badge(r.status) }}</td>
+          <td class="text-end">{{ "%.2f"|format(r.risk) }}</td>
+          <td><span class="badge bg-{{ sc }}-lt"><i class="ti ti-{{ si }} me-1"></i>{{ r.sentiment }}</span></td>
+          <td>{% if r.has_photo %}<span class="badge bg-{{ 'red' if r.photo_result in ('damaged', 'rotten') else 'green' }}-lt">{{ r.photo_result }}</span>{% else %}<span class="text-secondary">–</span>{% endif %}</td>
+          <td class="cell-review text-secondary small">{{ r.review_text|truncate(100) }}</td>
+          <td class="small">{{ r.reasons.split(" | ")[0] }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty">
+      <div class="empty-icon"><i class="ti ti-history"></i></div>
+      <p class="empty-title">Nothing checked yet</p>
+      <p class="empty-subtitle text-secondary">Check an order or run the demo orders, and they will appear here.</p>
+      <div class="empty-action"><a href="{{ url_for('check') }}" class="btn btn-primary"><i class="ti ti-message-search me-1"></i>Check an order</a></div>
+    </div>
+  </div>
+  {% endif %}
 </div>
-{% else %}
-<div class="card"><p class="muted" style="margin:0">Nothing checked yet. Try <a href="{{ url_for('check') }}">Check an order</a> or run the demo orders on the <a href="{{ url_for('batch') }}">Batch</a> page.</p></div>
-{% endif %}
 {% endblock %}

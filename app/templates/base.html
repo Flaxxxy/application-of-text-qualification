@@ -1,35 +1,105 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-navbar-position="vertical">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Review Flagging{% endblock %} · Retail Review Flagging</title>
+  <!-- Tabler UI kit (MIT) + Tabler Icons (MIT), loaded from the jsDelivr CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.6.1/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.49.0/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232a78d6'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='Arial'>!</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23206bc4'/><text x='16' y='23' font-size='20' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>!</text></svg>">
 </head>
 <body>
-  {% set nav = [("home", "Home"), ("check", "Check an order"), ("batch", "Batch"), ("history", "History"), ("models", "Models")] %}
-  <header class="top">
-    <div class="wrap">
-      <a class="brand" href="{{ url_for('home') }}"><span class="brand-mark">!</span> Retail Review Flagging</a>
-      <nav class="nav" aria-label="Main">
-        {% for endpoint, label in nav %}
-          <a href="{{ url_for(endpoint) }}" class="{{ 'active' if request.endpoint == endpoint }}">{{ label }}</a>
-        {% endfor %}
-      </nav>
+{% set nav = [
+  ("home", "Home", "home"),
+  ("check", "Check an order", "message-search"),
+  ("batch", "Batch", "files"),
+  ("history", "History", "history"),
+  ("models", "Models & results", "chart-bar"),
+] %}
+<div class="page">
+  <!-- Sidebar -->
+  <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+    <div class="container-fluid">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
+              aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="navbar-brand navbar-brand-autodark">
+        <a href="{{ url_for('home') }}" class="d-flex align-items-center gap-2 text-reset text-decoration-none">
+          <span class="avatar avatar-sm bg-primary text-white"><i class="ti ti-shield-check"></i></span>
+          <span class="brand-text">Review Flagging</span>
+        </a>
+      </div>
+      <div class="collapse navbar-collapse" id="sidebar-menu">
+        <ul class="navbar-nav pt-lg-3">
+          {% for endpoint, label, icon in nav %}
+          <li class="nav-item {{ 'active' if request.endpoint == endpoint }}">
+            <a class="nav-link" href="{{ url_for(endpoint) }}">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-{{ icon }}"></i></span>
+              <span class="nav-link-title">{{ label }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="sidebar-foot d-none d-lg-block">
+          <form method="post" action="{{ url_for('batch') }}">
+            <button class="btn btn-primary w-100" name="action" value="demo">
+              <i class="ti ti-player-play me-1"></i> Run demo orders
+            </button>
+          </form>
+          <div class="text-secondary small mt-3">
+            <i class="ti ti-school me-1"></i>AI in Accounting &amp; Finance · NTU
+          </div>
+        </div>
+      </div>
     </div>
-  </header>
-  <main>
-    <div class="wrap">
-      {% block content %}{% endblock %}
+  </aside>
+
+  <div class="page-wrapper">
+    <!-- Top bar (inside .page-wrapper: Tabler 1.6 hides a top bar that is a direct child of .page in vertical layout) -->
+    <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none">
+      <div class="container-xl">
+        <div class="d-flex align-items-center gap-2 text-secondary">
+          <i class="ti ti-bolt"></i>
+          <span>Flag problematic orders from the review <strong>and</strong> the customer's photo</span>
+        </div>
+        <div class="navbar-nav flex-row order-md-last align-items-center gap-3">
+          <span class="badge bg-green-lt" title="All three models are loaded and ready">
+            <i class="ti ti-cpu me-1"></i>Models loaded · ONNX on CPU
+          </span>
+          <a href="https://github.com/Flaxxxy/application-of-text-qualification" class="btn btn-ghost-secondary btn-icon"
+             title="Source code" target="_blank" rel="noopener"><i class="ti ti-brand-github"></i></a>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-header d-print-none">
+      <div class="container-xl">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <div class="page-pretitle">{% block pretitle %}Retail review flagging{% endblock %}</div>
+            <h2 class="page-title">{% block heading %}{% endblock %}</h2>
+          </div>
+          <div class="col-auto ms-auto d-print-none">{% block actions %}{% endblock %}</div>
+        </div>
+      </div>
     </div>
-  </main>
-  <footer>
-    <div class="wrap">
-      Course project · AI in Accounting &amp; Finance (NTU). Text model: fine-tuned DistilBERT · photo models: MobileNetV2 ·
-      all running as ONNX on a small CPU server. Results come from real test runs; demo orders are simulated.
+    <div class="page-body">
+      <div class="container-xl">
+        {% block content %}{% endblock %}
+      </div>
     </div>
-  </footer>
-  {% block scripts %}{% endblock %}
+    <footer class="footer footer-transparent d-print-none">
+      <div class="container-xl text-secondary small">
+        Text: fine-tuned DistilBERT · photos: MobileNetV2 · all models run as ONNX on a small CPU server.
+        Results come from real test runs; demo orders are simulated (review and photo from different customers).
+      </div>
+    </footer>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.6.1/dist/js/tabler.min.js" defer></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

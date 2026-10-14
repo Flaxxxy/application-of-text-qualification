@@ -194,3 +194,12 @@ Packages MobileNetV2 per source: BoxCondition 0.894, Roboflow 0.800, Kaggle rend
 - README quick start + `docs/screenshots/`.
 
 **Numbers (Mac, gunicorn 1 worker):** start-up 0.9 s / 251 MB; **peak 281 MB** (during the 12-order batch; target < 450 MB); one order with photo 0.05 s; 12 demo orders 0.25 s.
+
+**UI redesign (2026-10-14, Denis's request):** Tabler UI kit 1.6.1 (MIT) + Tabler Icons 3.49 via jsDelivr CDN.
+`base.html` = dark vertical sidebar (nav + "Run demo orders") + top bar ("Models loaded" badge, GitHub link) + page header;
+all pages extend it. Tabler cards (decision card with coloured top strip), status badges (OK green / REVIEW yellow / URGENT red,
+always icon + word), progress bars for class probabilities and P(bad) with a threshold marker, Tabler tables for Batch/History,
+tabs on Models, empty states. Custom CSS ~50 lines. Checked with headless Chrome at 1920×1080.
+Gotcha found: Tabler 1.6 hides a vertical sidebar when a top navbar is a sibling in `.page` unless
+`<html data-bs-navbar-position="vertical">` is set, and then hides a top bar that is a direct child of `.page`; the top bar now
+lives inside `.page-wrapper`. Note: the pages need internet in the browser (CDN). 90 tests pass; peak RAM 251–281 MB.

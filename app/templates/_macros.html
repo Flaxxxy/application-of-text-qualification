@@ -1,7 +1,19 @@
+{# Shared pieces. Status is always shown as colour + icon + word, never colour alone. #}
+
+{% set STATUS = {
+  "OK":     {"color": "green",  "icon": "circle-check",   "text": "nothing to do"},
+  "REVIEW": {"color": "yellow", "icon": "alert-triangle", "text": "a person should look"},
+  "URGENT": {"color": "red",    "icon": "alert-octagon",  "text": "text and photo both show a problem"},
+} %}
+
 {% macro status_badge(status, large=false) -%}
-  {%- set sym = {"OK": "✓", "REVIEW": "!", "URGENT": "‼"}[status] -%}
-  <span class="badge badge-{{ status }}{{ ' badge-lg' if large }}"><span aria-hidden="true">{{ sym }}</span> {{ status }}</span>
+  {%- set s = STATUS[status] -%}
+  <span class="badge bg-{{ s.color }} text-{{ s.color }}-fg {{ 'badge-lg' if large }}">
+    <i class="ti ti-{{ s.icon }} me-1"></i>{{ status }}
+  </span>
 {%- endmacro %}
+
+{% macro status_color(status) -%}{{ STATUS[status].color }}{%- endmacro %}
 
 {% macro pct(x, digits=0) -%}
   {%- if x is none or x == "" -%}–{%- else -%}{{ "%.*f"|format(digits, x * 100) }}%{%- endif -%}
@@ -10,3 +22,13 @@
 {% macro num(x, digits=3) -%}
   {%- if x is none or x == "" -%}–{%- else -%}{{ "%.*f"|format(digits, x) }}{%- endif -%}
 {%- endmacro %}
+
+{# A Tabler progress bar with an optional threshold marker (a thin line at the decision threshold). #}
+{% macro bar(value, color, threshold=none, height="") -%}
+  <div class="progress progress-marked {{ height }}" role="progressbar" aria-valuenow="{{ (value * 100)|round(0) }}" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress-bar bg-{{ color }}" style="width: {{ (value * 100)|round(1) }}%"></div>
+    {% if threshold is not none %}<span class="threshold" style="left: {{ (threshold * 100)|round(1) }}%" title="threshold {{ pct(threshold) }}"></span>{% endif %}
+  </div>
+{%- endmacro %}
+
+{% set SENTIMENT = {"negative": ("red", "mood-sad"), "neutral": ("secondary", "mood-empty"), "positive": ("blue", "mood-smile")} %}

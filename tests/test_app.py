@@ -76,4 +76,4 @@ def test_batch_reports_csv_problems(client):
 
 def test_history_shows_logged_orders(client):
     client.post("/batch", data={"action": "demo"})
-    assert client.get("/history").data.count(b"badge-") >= 12
+    assert client.get("/history").data.count(b"data-status=") >= 12

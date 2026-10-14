@@ -1,108 +1,158 @@
 {% extends "base.html" %}
-{% from "_macros.html" import pct, num %}
-{% block title %}Models{% endblock %}
-{% macro fig(name, caption, width=None) -%}
+{% from "_macros.html" import pct, num, bar %}
+{% block title %}Models & results{% endblock %}
+{% block pretitle %}Evaluation on held-out test data{% endblock %}
+{% block heading %}Models &amp; results{% endblock %}
+{% macro fig(name, caption) -%}
   {% if name in figures %}
-    <div class="figure"><img src="{{ url_for('figure', name=name ~ '.png') }}" alt="{{ caption }}" loading="lazy" {% if width %}style="max-width:{{ width }}px"{% endif %}></div>
-    <div class="caption">{{ caption }}</div>
+    <figure class="mb-0">
+      <img class="figure-img" src="{{ url_for('figure', name=name ~ '.png') }}" alt="{{ caption }}" loading="lazy">
+      <figcaption class="text-secondary small mt-2">{{ caption }}</figcaption>
+    </figure>
   {% endif %}
 {%- endmacro %}
+{% macro group_badge(group) -%}
+  {%- set c = {"ours": "blue", "ready-made": "orange", "fine-tuned": "green"}[group] -%}
+  <span class="badge bg-{{ c }}-lt">{{ group }}</span>
+{%- endmacro %}
 {% block content %}
-<h1>Models and results</h1>
-<p class="muted">Every number below comes from a real run on held-out test data (<code>results/metrics.json</code>).
-   Main metric: macro-F1 (the average F1 over classes, so rare classes count as much as common ones).</p>
-
-<section class="section">
-  <h2>1 · Review sentiment (negative / neutral / positive)</h2>
-  <p class="muted">6,751 test reviews from Amazon (electronics, grocery) and Flipkart. "External" = 75 short reviews from a
-     different source, positive vs negative only. Speed measured on a laptop CPU.</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Model</th><th>Kind</th><th class="num">Test macro-F1</th><th class="num">F1 neutral</th><th class="num">External F1</th><th class="num">ms / review</th><th class="num">Size MB</th></tr></thead>
-      <tbody>
-      {% for r in t.text %}
-        <tr class="{{ 'highlight' if r.name == 'distilbert_finetuned' }}">
-          <td>{{ r.name }}{% if r.name == 'distilbert_finetuned' %} <span class="chip">used on this site</span>{% endif %}</td>
-          <td class="small">{{ r.type }}</td>
-          <td class="num">{{ num(r.f1) }}</td><td class="num">{{ num(r.neutral) }}</td><td class="num">{{ num(r.external) }}</td>
-          <td class="num">{{ num(r.ms, 2) }}</td><td class="num">{{ num(r.mb, 1) }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% if t.deploy.text_int8_test %}
-    <p class="small muted" style="margin-top:8px">On this site DistilBERT runs as an 8-bit ONNX model ({{ num(t.deploy.files_mb.get('text_distilbert.int8.onnx'), 1) }} MB):
-       test macro-F1 {{ num(t.deploy.text_int8_test.macro_f1, 4) }} vs {{ num(t.deploy.text_int8_test.pytorch_fp32_macro_f1, 4) }} for the original.</p>
-  {% endif %}
-  <div class="grid grid-2" style="margin-top:16px">
-    <div>{{ fig("text_model_comparison", "Test macro-F1 of every text model: ours, ready-made from the internet, and fine-tuned on our data.") }}</div>
-    <div>{{ fig("cm_text_distilbert_finetuned", "Confusion matrix of the deployed model: mistakes are almost always 'next door' (neutral).", 420) }}</div>
-  </div>
-  <div style="margin-top:16px">{{ fig("text_tfidf_top_words", "Explainability: the words that push TF-IDF + Logistic Regression towards each class.") }}</div>
-</section>
-
-<section class="section">
-  <h2>2 · Photo checks</h2>
-  <div class="grid grid-2">
-  {% for domain, d in t.images.items() %}
-    <div>
-      <h3>{{ domain }}: {{ d.bad }} vs {{ 'intact' if domain == 'packages' else 'fresh' }}</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Model</th><th class="num">Macro-F1</th><th class="num">Recall {{ d.bad }}</th><th class="num">Precision {{ d.bad }}</th></tr></thead>
-          <tbody>
-          {% for r in d.rows %}
-            <tr class="{{ 'highlight' if r.name == 'mobilenetv2' }}">
-              <td>{{ r.name }}{% if r.name == 'mobilenetv2' %} <span class="chip">used</span>{% endif %}<div class="muted small">{{ r.type }}</div></td>
-              <td class="num">{{ num(r.f1) }}</td><td class="num">{{ num(r.recall) }}</td><td class="num">{{ num(r.precision) }}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% set used = d.rows|selectattr("name", "equalto", "mobilenetv2")|list %}
-      {% if used %}
-        <p class="small muted" style="margin-top:8px">MobileNetV2 per {{ 'source' if domain == 'packages' else 'fruit' }}:
-          {% for g, v in used[0].groups.items() %}{{ g.replace('packages_', '') }} {{ num(v.macro_f1, 2) }}{{ ', ' if not loop.last }}{% endfor %}.
-          Threshold tuned on validation to catch ≥ 90% of {{ d.bad }} photos.</p>
-      {% endif %}
-      {{ fig("gradcam_" ~ domain ~ "_mobilenetv2", "Grad-CAM: the regions that made the model say '" ~ d.bad ~ "'.") }}
-    </div>
-  {% endfor %}
-  </div>
-</section>
-
-<section class="section">
-  <h2>3 · Combining review and photo</h2>
-  {% if t.fusion %}
-  <p class="muted">{{ t.fusion.n_test }} simulated test orders ({{ pct(t.fusion.problematic_share_test) }} problematic). Each order pairs a
-     test review with a test photo from a different customer, so the numbers show how the logic behaves, not real shop data.
-     Weights: text {{ t.fusion.tuned_settings.weights.text }}, photo {{ t.fusion.tuned_settings.weights.image }}, tags {{ t.fusion.tuned_settings.weights.tag }}.</p>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Strategy for flagging an order</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">Orders flagged</th></tr></thead>
-      <tbody>
-      {% for name, v in t.fusion.comparison_test.items() %}
-        <tr class="{{ 'highlight' if 'ours' in name }}"><td>{{ name }}</td><td class="num">{{ num(v.precision, 2) }}</td><td class="num">{{ num(v.recall, 2) }}</td>
-            <td class="num">{{ num(v.f1, 2) }}</td><td class="num">{{ pct(v.flag_rate) }}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
-  <div style="margin-top:16px">{{ fig("fusion_strategy_comparison", "The rules for when review and photo disagree are what lift recall from ~0.6 to 0.9.") }}</div>
-</section>
-
-<section class="section">
-  <h2>Limitations</h2>
-  <div class="card">
-    <ul style="margin:0;padding-left:20px">
-      <li>Sentiment labels come from star ratings, which are noisy (e.g. "very bad" rated 3 stars).</li>
-      <li>Orders that combine a review and a photo are simulated; real customer photos may look different from the training photos.</li>
-      <li>Package photos mix real cardboard photos, product shots and 3D renders; the model is weakest on the renders.</li>
-      <li>The produce model knows apples, bananas and oranges only.</li>
+<div class="card">
+  <div class="card-header">
+    <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+      <li class="nav-item" role="presentation"><a href="#tab-text" class="nav-link active" data-bs-toggle="tab" role="tab"><i class="ti ti-message-2 me-2"></i>Review sentiment</a></li>
+      <li class="nav-item" role="presentation"><a href="#tab-images" class="nav-link" data-bs-toggle="tab" role="tab"><i class="ti ti-photo me-2"></i>Photo checks</a></li>
+      <li class="nav-item" role="presentation"><a href="#tab-fusion" class="nav-link" data-bs-toggle="tab" role="tab"><i class="ti ti-chart-dots-3 me-2"></i>Combined</a></li>
+      <li class="nav-item" role="presentation"><a href="#tab-limits" class="nav-link" data-bs-toggle="tab" role="tab"><i class="ti ti-info-circle me-2"></i>Limitations</a></li>
     </ul>
   </div>
-</section>
+  <div class="card-body">
+    <div class="tab-content">
+
+      <!-- TEXT -->
+      <div class="tab-pane active show" id="tab-text" role="tabpanel">
+        <p class="text-secondary">Negative / neutral / positive on <strong>6,751 test reviews</strong> (Amazon electronics &amp; grocery, Flipkart).
+          Main metric: <strong>macro-F1</strong>, the average F1 over the three classes. "External" = 75 short reviews from another
+          source, positive vs negative only. Speed on a laptop CPU.</p>
+        <div class="table-responsive border rounded mb-3">
+          <table class="table table-vcenter card-table mb-0">
+            <thead><tr><th>Model</th><th>Group</th><th style="width:22%">Test macro-F1</th><th class="text-end">F1 neutral</th><th class="text-end">External F1</th><th class="text-end">ms / review</th><th class="text-end">Size MB</th></tr></thead>
+            <tbody>
+            {% for r in t.text %}
+              <tr class="{{ 'table-active' if r.name == 'distilbert_finetuned' }}">
+                <td><div class="fw-bold">{{ r.name }}</div><div class="text-secondary small">{{ r.type }}</div></td>
+                <td>{{ group_badge(r.group) }}{% if r.name == 'distilbert_finetuned' %} <span class="badge bg-primary text-primary-fg ms-1"><i class="ti ti-check me-1"></i>on this site</span>{% endif %}</td>
+                <td><div class="d-flex align-items-center gap-2"><span class="fw-bold" style="width:3.2rem">{{ num(r.f1) }}</span><div class="flex-fill">{{ bar(r.f1, {"ours": "blue", "ready-made": "orange", "fine-tuned": "green"}[r.group], height="progress-sm") }}</div></div></td>
+                <td class="text-end">{{ num(r.neutral) }}</td><td class="text-end">{{ num(r.external) }}</td>
+                <td class="text-end">{{ num(r.ms, 2) }}</td><td class="text-end">{{ num(r.mb, 1) }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if t.deploy.text_int8_test %}
+          <div class="alert alert-info mb-3"><div class="d-flex gap-2"><i class="ti ti-cpu"></i><div>
+            On this site DistilBERT runs as an <strong>8-bit ONNX</strong> model ({{ num(t.deploy.files_mb.get('text_distilbert.int8.onnx'), 1) }} MB instead of 268 MB):
+            test macro-F1 <strong>{{ num(t.deploy.text_int8_test.macro_f1, 4) }}</strong> vs {{ num(t.deploy.text_int8_test.pytorch_fp32_macro_f1, 4) }} for the original.</div></div></div>
+        {% endif %}
+        <div class="row g-3">
+          <div class="col-lg-7">{{ fig("text_model_comparison", "Ours (blue), ready-made from Hugging Face (orange), fine-tuned on our reviews (green).") }}</div>
+          <div class="col-lg-5">{{ fig("cm_text_distilbert_finetuned", "Deployed model: mistakes are almost always 'next door' (via neutral).") }}</div>
+          <div class="col-12">{{ fig("text_tfidf_top_words", "Explainability: the words that push TF-IDF + Logistic Regression towards each class. Kept negations ('not good') matter.") }}</div>
+        </div>
+      </div>
+
+      <!-- IMAGES -->
+      <div class="tab-pane" id="tab-images" role="tabpanel">
+        <div class="row g-4">
+        {% for domain, d in t.images.items() %}
+          <div class="col-lg-6">
+            <h3 class="mb-1"><i class="ti ti-{{ 'package' if domain == 'packages' else 'apple' }} me-2"></i>{{ domain|capitalize }}: {{ d.bad }} vs {{ 'intact' if domain == 'packages' else 'fresh' }}</h3>
+            <p class="text-secondary small">Threshold tuned on validation to catch ≥ 90% of {{ d.bad }} photos.</p>
+            <div class="table-responsive border rounded mb-2">
+              <table class="table table-vcenter card-table mb-0">
+                <thead><tr><th>Model</th><th style="width:30%">Macro-F1</th><th class="text-end">Recall {{ d.bad }}</th><th class="text-end">Precision</th></tr></thead>
+                <tbody>
+                {% for r in d.rows %}
+                  {% set g = "ready-made" if r.name.startswith("bench_") else "fine-tuned" if r.name == "mobilenetv2" else "ours" %}
+                  <tr class="{{ 'table-active' if r.name == 'mobilenetv2' }}">
+                    <td><div class="fw-bold">{{ r.name }}{% if r.name == 'mobilenetv2' %} <span class="badge bg-primary text-primary-fg ms-1">used</span>{% endif %}</div><div class="text-secondary small">{{ r.type }}</div></td>
+                    <td><div class="d-flex align-items-center gap-2"><span class="fw-bold" style="width:3.2rem">{{ num(r.f1) }}</span><div class="flex-fill">{{ bar(r.f1, {"ours": "blue", "ready-made": "orange", "fine-tuned": "green"}[g], height="progress-sm") }}</div></div></td>
+                    <td class="text-end">{{ num(r.recall) }}</td><td class="text-end">{{ num(r.precision) }}</td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% set used = d.rows|selectattr("name", "equalto", "mobilenetv2")|list %}
+            {% if used %}
+              <div class="d-flex flex-wrap gap-1 mb-3">
+                <span class="text-secondary small me-1">MobileNetV2 per {{ 'source' if domain == 'packages' else 'fruit' }}:</span>
+                {% for g, v in used[0].groups.items() %}<span class="badge bg-secondary-lt">{{ g.replace('packages_', '') }} {{ num(v.macro_f1, 2) }}</span>{% endfor %}
+              </div>
+            {% endif %}
+            {{ fig("gradcam_" ~ domain ~ "_mobilenetv2", "Grad-CAM: the regions that made the model say '" ~ d.bad ~ "'.") }}
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+
+      <!-- FUSION -->
+      <div class="tab-pane" id="tab-fusion" role="tabpanel">
+        {% if t.fusion %}
+        <div class="alert alert-warning mb-3"><div class="d-flex gap-2"><i class="ti ti-alert-triangle"></i><div>
+          <strong>Simulated orders.</strong> {{ t.fusion.n_test }} test orders, each pairing a test review with a test photo from a different
+          customer ({{ pct(t.fusion.problematic_share_test) }} problematic). They show how the decision logic behaves, not real shop data.</div></div></div>
+        <div class="table-responsive border rounded mb-3">
+          <table class="table table-vcenter card-table mb-0">
+            <thead><tr><th>How an order gets flagged</th><th class="text-end">Precision</th><th style="width:28%">Recall (problem orders caught)</th><th class="text-end">F1</th><th class="text-end">Orders flagged</th></tr></thead>
+            <tbody>
+            {% for name, v in t.fusion.comparison_test.items() %}
+              <tr class="{{ 'table-active' if 'ours' in name }}">
+                <td class="{{ 'fw-bold' if 'ours' in name }}">{{ name }}</td>
+                <td class="text-end">{{ num(v.precision, 2) }}</td>
+                <td><div class="d-flex align-items-center gap-2"><span class="fw-bold" style="width:2.8rem">{{ num(v.recall, 2) }}</span><div class="flex-fill">{{ bar(v.recall, 'green' if 'ours' in name else 'secondary', height="progress-sm") }}</div></div></td>
+                <td class="text-end fw-bold">{{ num(v.f1, 2) }}</td><td class="text-end">{{ pct(v.flag_rate) }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="row g-3">
+          <div class="col-lg-7">{{ fig("fusion_strategy_comparison", "The rules for when review and photo disagree lift recall from ~0.6 to 0.9.") }}</div>
+          <div class="col-lg-5">
+            <div class="card card-sm bg-blue-lt border-0"><div class="card-body">
+              <h4><i class="ti ti-adjustments me-1"></i>Weights used</h4>
+              <div class="datagrid">
+                <div class="datagrid-item"><div class="datagrid-title">Review negativity</div><div class="datagrid-content">{{ t.fusion.tuned_settings.weights.text }}</div></div>
+                <div class="datagrid-item"><div class="datagrid-title">Photo P(bad)</div><div class="datagrid-content">{{ t.fusion.tuned_settings.weights.image }}</div></div>
+                <div class="datagrid-item"><div class="datagrid-title">Issue tag found</div><div class="datagrid-content">{{ t.fusion.tuned_settings.weights.tag }}</div></div>
+                <div class="datagrid-item"><div class="datagrid-title">REVIEW / URGENT from</div><div class="datagrid-content">{{ t.fusion.tuned_settings.thresholds.review }} / {{ t.fusion.tuned_settings.thresholds.urgent }}</div></div>
+              </div>
+              <p class="text-secondary small mt-3 mb-0">Tuned on a separate set of simulated orders: the most balanced weights within 0.01 F1 of the best.</p>
+            </div></div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- LIMITATIONS -->
+      <div class="tab-pane" id="tab-limits" role="tabpanel">
+        <div class="list-group list-group-flush">
+          {% for icon, title, text in [
+            ("star", "Star ratings as labels", "Sentiment labels come from star ratings, which are noisy: some \"very bad\" reviews are rated 3 stars."),
+            ("arrows-shuffle", "Simulated orders", "There is no public dataset with a review AND a photo per order, so the combined result pairs reviews and photos from different customers."),
+            ("photo-scan", "Photos differ from real customer photos", "Package photos mix real cardboard photos, product shots and 3D renders; the model is weakest on the renders."),
+            ("apple", "Three fruits only", "The produce model knows apples, bananas and oranges."),
+            ("copy", "Copies removed from the data", "84% of the original fruit images were rotated/flipped copies; they were removed so test scores are honest."),
+          ] %}
+            <div class="list-group-item d-flex gap-3">
+              <span class="avatar avatar-sm bg-secondary-lt"><i class="ti ti-{{ icon }}"></i></span>
+              <div><div class="fw-bold">{{ title }}</div><div class="text-secondary">{{ text }}</div></div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

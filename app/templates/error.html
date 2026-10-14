@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Problem{% endblock %}
+{% block pretitle %}Something went wrong{% endblock %}
+{% block heading %}Sorry{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>Sorry</h1>
-  <p>{{ message }}</p>
-  <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to the start</a>
+  <div class="card-body">
+    <div class="empty">
+      <div class="empty-icon"><i class="ti ti-alert-circle"></i></div>
+      <p class="empty-title">{{ message }}</p>
+      <div class="empty-action"><a href="{{ url_for('home') }}" class="btn btn-primary"><i class="ti ti-home me-1"></i>Back to the start</a></div>
+    </div>
+  </div>
 </div>
 {% endblock %}

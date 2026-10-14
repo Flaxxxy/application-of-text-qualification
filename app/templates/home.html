@@ -1,57 +1,111 @@
 {% extends "base.html" %}
 {% from "_macros.html" import status_badge, pct, num %}
 {% block title %}Home{% endblock %}
+{% block pretitle %}Overview{% endblock %}
+{% block heading %}Find problematic orders from what customers write and show{% endblock %}
+{% block actions %}
+  <div class="btn-list">
+    <a href="{{ url_for('check') }}" class="btn btn-primary"><i class="ti ti-message-search me-1"></i>Check an order</a>
+    <form method="post" action="{{ url_for('batch') }}" class="d-inline">
+      <button class="btn" name="action" value="demo"><i class="ti ti-player-play me-1"></i>Run the 12 demo orders</button>
+    </form>
+  </div>
+{% endblock %}
 {% block content %}
-<section class="hero">
-  <div>
-    <h1>Find problematic orders from what customers write <em>and</em> show</h1>
-    <p>An online shop gets thousands of reviews a day, many with a photo. This tool reads each review, checks the
-       photo for a damaged package or spoiled food, and combines both into one decision a support agent can act on,
-       with the reasons spelled out.</p>
-    <div class="actions">
-      <a class="btn btn-primary" href="{{ url_for('check') }}">Check an order</a>
-      <form method="post" action="{{ url_for('batch') }}">
-        <button class="btn btn-ghost" name="action" value="demo">Run the 12 demo orders</button>
-      </form>
-    </div>
-  </div>
-  <div class="card">
-    <h3>What the decision means</h3>
-    <p>{{ status_badge("OK") }} &nbsp;nothing to do</p>
-    <p>{{ status_badge("REVIEW") }} &nbsp;a person should look: e.g. the photo contradicts the review, or a damage claim isn't visible</p>
-    <p style="margin:0">{{ status_badge("URGENT") }} &nbsp;the review and the photo both show a problem</p>
-  </div>
-</section>
+{% set ours = stats.fusion.get("combined: score + rules (ours)", {}) %}
+{% set text_only = stats.fusion.get("text only (review negative)", {}) %}
 
-<section class="section">
-  <h2>How it works</h2>
-  <div class="flow">
-    <div class="step"><b>1 · Review text</b><span class="muted small">Sentiment (negative / neutral / positive) with fine-tuned DistilBERT, plus issue tags such as "damaged packaging" or "refund request".</span></div>
-    <div class="arrow" aria-hidden="true">→</div>
-    <div class="step"><b>2 · Customer photo</b><span class="muted small">Electronics → package model (damaged vs intact). Grocery → produce model (rotten vs fresh). Both MobileNetV2.</span></div>
-    <div class="arrow" aria-hidden="true">→</div>
-    <div class="step"><b>3 · Fusion</b><span class="muted small">A weighted risk score plus rules for when text and photo agree or disagree → OK / REVIEW / URGENT with reasons.</span></div>
+<div class="row row-deck row-cards">
+  <!-- The problem -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body d-flex flex-column">
+        <h3 class="card-title">The business problem</h3>
+        <p class="text-secondary fs-3 mb-3">An online shop receives thousands of reviews a day, many with a photo. Somewhere in
+          that stream are damaged deliveries, spoiled food and false claims. This tool reads each review, checks the photo,
+          and gives the support team one decision per order, with the reasons spelled out.</p>
+        <div class="d-flex flex-wrap gap-3 mt-auto">
+          <span class="d-inline-flex align-items-center gap-2"><span class="avatar avatar-xs bg-blue-lt"><i class="ti ti-message-2"></i></span>Review sentiment &amp; issue tags</span>
+          <span class="d-inline-flex align-items-center gap-2"><span class="avatar avatar-xs bg-orange-lt"><i class="ti ti-package"></i></span>Damaged package check</span>
+          <span class="d-inline-flex align-items-center gap-2"><span class="avatar avatar-xs bg-green-lt"><i class="ti ti-apple"></i></span>Rotten produce check</span>
+        </div>
+      </div>
+    </div>
   </div>
-</section>
+  <!-- Statuses -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">What the decision means</h3></div>
+      <div class="list-group list-group-flush">
+        <div class="list-group-item d-flex align-items-center gap-3">{{ status_badge("OK") }}<span class="text-secondary">Nothing to do.</span></div>
+        <div class="list-group-item d-flex align-items-center gap-3">{{ status_badge("REVIEW") }}<span class="text-secondary">A person should look, e.g. the photo contradicts the review or a damage claim isn't visible.</span></div>
+        <div class="list-group-item d-flex align-items-center gap-3">{{ status_badge("URGENT") }}<span class="text-secondary">The review and the photo both show a problem.</span></div>
+      </div>
+    </div>
+  </div>
 
-<section class="section">
-  <h2>How well it works</h2>
-  <div class="grid grid-3">
+  <!-- Key numbers -->
+  <div class="col-sm-6 col-lg-3">
+    <div class="card card-sm"><div class="card-body"><div class="row align-items-center">
+      <div class="col-auto"><span class="bg-blue text-white avatar"><i class="ti ti-message-2"></i></span></div>
+      <div class="col"><div class="h1 mb-0">{{ num(stats.text_f1, 2) }}</div><div class="text-secondary">review sentiment, macro-F1</div></div>
+    </div></div></div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card card-sm"><div class="card-body"><div class="row align-items-center">
+      <div class="col-auto"><span class="bg-orange text-white avatar"><i class="ti ti-package"></i></span></div>
+      <div class="col"><div class="h1 mb-0">{{ num(stats.packages_f1, 2) }}</div><div class="text-secondary">damaged packages, macro-F1</div></div>
+    </div></div></div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card card-sm"><div class="card-body"><div class="row align-items-center">
+      <div class="col-auto"><span class="bg-green text-white avatar"><i class="ti ti-apple"></i></span></div>
+      <div class="col"><div class="h1 mb-0">{{ num(stats.produce_f1, 2) }}</div><div class="text-secondary">rotten produce, macro-F1</div></div>
+    </div></div></div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card card-sm"><div class="card-body"><div class="row align-items-center">
+      <div class="col-auto"><span class="bg-red text-white avatar"><i class="ti ti-filter"></i></span></div>
+      <div class="col"><div class="h1 mb-0">{{ pct(ours.get("recall")) }}</div><div class="text-secondary">problem orders caught (review alone: {{ pct(text_only.get("recall")) }})</div></div>
+    </div></div></div>
+  </div>
+
+  <!-- How it works -->
+  <div class="col-12">
     <div class="card">
-      <div class="stat">{{ num(stats.text_f1, 2) }}</div>
-      <div class="stat-label">macro-F1 of the review sentiment model on 6,751 test reviews (3 classes)</div>
-    </div>
-    <div class="card">
-      <div class="stat">{{ num(stats.packages_f1, 2) }} · {{ num(stats.produce_f1, 2) }}</div>
-      <div class="stat-label">macro-F1 of the photo models on test photos: damaged packages · rotten produce</div>
-    </div>
-    <div class="card">
-      {% set ours = stats.fusion.get("combined: score + rules (ours)", {}) %}
-      {% set text_only = stats.fusion.get("text only (review negative)", {}) %}
-      <div class="stat">{{ pct(ours.get("recall")) }}</div>
-      <div class="stat-label">of problematic orders caught by combining review and photo, vs {{ pct(text_only.get("recall")) }} from the review alone (simulated orders)</div>
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i>How it works</h3></div>
+      <div class="card-body">
+        <div class="row g-3 align-items-stretch">
+          <div class="col-lg">
+            <div class="card card-sm h-100 bg-blue-lt border-0"><div class="card-body">
+              <div class="d-flex align-items-center gap-2 mb-2"><span class="avatar avatar-sm bg-blue text-white">1</span><strong>Read the review</strong></div>
+              <div class="text-secondary">Fine-tuned <strong>DistilBERT</strong> gives negative / neutral / positive. A keyword lexicon finds issues such as
+                "damaged packaging", "wrong item" or "refund request", and handles negation ("not damaged").</div>
+            </div></div>
+          </div>
+          <div class="col-lg-auto d-none d-lg-flex align-items-center flow-arrow"><i class="ti ti-arrow-right"></i></div>
+          <div class="col-lg">
+            <div class="card card-sm h-100 bg-orange-lt border-0"><div class="card-body">
+              <div class="d-flex align-items-center gap-2 mb-2"><span class="avatar avatar-sm bg-orange text-white">2</span><strong>Check the photo</strong></div>
+              <div class="text-secondary">The product category picks the model: <strong>electronics</strong> → damaged vs intact package,
+                <strong>grocery</strong> → rotten vs fresh produce. Both are MobileNetV2, tuned to catch ≥ 90% of bad photos.</div>
+            </div></div>
+          </div>
+          <div class="col-lg-auto d-none d-lg-flex align-items-center flow-arrow"><i class="ti ti-arrow-right"></i></div>
+          <div class="col-lg">
+            <div class="card card-sm h-100 bg-red-lt border-0"><div class="card-body">
+              <div class="d-flex align-items-center gap-2 mb-2"><span class="avatar avatar-sm bg-red text-white">3</span><strong>Combine and explain</strong></div>
+              <div class="text-secondary">A weighted risk score plus rules for when review and photo <em>agree</em> or <em>disagree</em>
+                (happy review + damaged box, damage claim + intact box) → OK / REVIEW / URGENT with reasons.</div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer text-secondary small">
+        <i class="ti ti-info-circle me-1"></i>All numbers come from real test runs; the combined result uses simulated orders.
+        Details on <a href="{{ url_for('models') }}">Models &amp; results</a>.
+      </div>
     </div>
   </div>
-  <p class="muted small" style="margin-top:12px">All numbers come from real test runs. Details on the <a href="{{ url_for('models') }}">Models</a> page.</p>
-</section>
+</div>
 {% endblock %}
