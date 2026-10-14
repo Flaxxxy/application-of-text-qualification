@@ -1,0 +1,13 @@
+order_id,category,review_text,image,shows,source_review_id
+DEMO-01,electronics,Do Not Buy. Difficult to set up; product does not work; box was damaged and product sounded like pieces were loose when I picked it up so it may have been broken during delivery.,images/DEMO-01.jpg,negative review + damaged box -> URGENT,amazon2023_electronics_89936
+DEMO-02,grocery,"Just No. Nasty , rancid tasting and cannot return",images/DEMO-02.jpg,negative review + rotten fruit -> URGENT,amazon2023_grocery_255379
+DEMO-03,electronics,great product! could be a little longer cable..,images/DEMO-03.jpg,positive review but damaged box -> REVIEW,amazon2023_electronics_122142
+DEMO-04,grocery,"Taste great. Fresh well packaged, would buy it again",images/DEMO-04.jpg,"'fresh, well packaged' but rotten photo -> REVIEW",amazon2023_grocery_99811
+DEMO-05,electronics,"Came mostly broken, died in 6 months. Quality was awful, the earbuds fell apart shortly after opening",images/DEMO-05.jpg,"claims it came broken, box looks intact -> REVIEW (possible false claim)",amazon2023_electronics_222544
+DEMO-06,grocery,I don’t recommend this. Sent this to my brother fir Christmas. He said the nuts were stale and the dried fruit was hard. He was very disappointed.,images/DEMO-06.jpg,"claims stale/hard fruit, photo looks fresh -> REVIEW (possible false claim)",amazon2023_grocery_257201
+DEMO-07,electronics,Stops working after about 8mo. It feels cheap. It worked great at first then stopped working after 8mo. Garbage.,images/DEMO-07.jpg,"stopped working, box fine -> REVIEW (problem a photo can't show)",amazon2023_electronics_179942
+DEMO-08,electronics,"Great for extra usb ports. Exactly what I needed. My new laptop only has 2 ports but I needed ports for my wireless mouse, wireless headset, phone, and a handheld scanner. I like that you can control the power for each port too.",images/DEMO-08.jpg,"happy customer, intact box -> OK",amazon2023_electronics_104112
+DEMO-09,grocery,Great light coffee blend. Really enjoyed this coffee - going to buy this again,images/DEMO-09.jpg,"happy customer, fresh fruit -> OK",amazon2023_grocery_58435
+DEMO-10,other,bat quality dont buy this product flipkart return my money,,"angry review, no photo -> text-only decision",flipkart_76081
+DEMO-11,grocery,Best thing ever. Oh lord. This is the best thing I've ever put into my mouth. Hands down. Absolutely worth buying. I'm in love.,,"happy review, no photo -> OK (text only)",amazon2023_grocery_226277
+DEMO-12,grocery,Ok beans. Good price. It was okay. Good price but I’ve definitely had a better latte using other beans.,images/DEMO-12.jpg,"neutral review, rotten photo -> REVIEW",amazon2023_grocery_156382

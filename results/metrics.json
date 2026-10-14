@@ -1706,5 +1706,78 @@
       },
       "measured_on": "2026-10-14, MacBook (Apple silicon), onnxruntime 1.31"
     }
+  },
+  "fusion": {
+    "simulated_orders": {
+      "n_val": 298,
+      "n_test": 298,
+      "problematic_share_test": 0.5503,
+      "tuned_settings": {
+        "weights": {
+          "text": 0.3,
+          "image": 0.4,
+          "tag": 0.3
+        },
+        "thresholds": {
+          "review": 0.4,
+          "urgent": 0.7
+        }
+      },
+      "val_f1_chosen": 0.9053,
+      "tuning_info": {
+        "best_val_f1": 0.915,
+        "single_best_settings": {
+          "weights": {
+            "text": 1.0,
+            "image": 0.0,
+            "tag": 0.0
+          },
+          "thresholds": {
+            "review": 0.3,
+            "urgent": 0.7
+          }
+        },
+        "n_within_tolerance": 780,
+        "tolerance": 0.01
+      },
+      "comparison_test": {
+        "text only (review negative)": {
+          "precision": 0.8557,
+          "recall": 0.5061,
+          "f1": 0.636,
+          "accuracy": 0.6812,
+          "flag_rate": 0.3255
+        },
+        "text only (fusion without photo)": {
+          "precision": 0.8791,
+          "recall": 0.4878,
+          "f1": 0.6275,
+          "accuracy": 0.6812,
+          "flag_rate": 0.3054
+        },
+        "photo only (photo model says bad)": {
+          "precision": 0.896,
+          "recall": 0.6829,
+          "f1": 0.7751,
+          "accuracy": 0.7819,
+          "flag_rate": 0.4195
+        },
+        "combined: weighted score only": {
+          "precision": 0.9423,
+          "recall": 0.5976,
+          "f1": 0.7313,
+          "accuracy": 0.7584,
+          "flag_rate": 0.349
+        },
+        "combined: score + rules (ours)": {
+          "precision": 0.8457,
+          "recall": 0.9024,
+          "f1": 0.8732,
+          "accuracy": 0.8557,
+          "flag_rate": 0.5872
+        }
+      },
+      "note": "Orders are SIMULATED: each pairs a test review with a test photo from different customers."
+    }
   }
 }

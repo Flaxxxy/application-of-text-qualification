@@ -159,3 +159,25 @@ Packages MobileNetV2 per source: BoxCondition 0.894, Roboflow 0.800, Kaggle rend
 - Parity (50 samples): images max |diff| ≤ 1.4e-6, same decisions; text fp32 ONNX 1.1e-6 (so preprocessing is exact); text int8 max 0.151 / mean 0.022, same label 100%.
 - int8 DistilBERT on the full test set: **macro-F1 0.7678** (PyTorch 0.7681), external 1.00.
 - Speed: 14.4 ms per review, 1 thread (Mac). Memory: 224 MB RSS with all models loaded and used (target < 450 MB).
+
+## Phase 6 — Fusion (2026-10-14, checkpoint)
+
+**Done**
+- `src/fusion.py`: `fuse()` (weighted risk score + 2x2 override rules + reason codes), `flag_order()` one-call API, simulated orders (two disjoint sets of 298 from the TEST splits, controlled mix of review/photo label combinations), scoring with the deployed ONNX models, weight tuning, strategy comparison, plots.
+- Claims only count as "not visible" if the photo model can see them (package model: `damaged_packaging`; produce model: `spoiled_food`). Any bad photo is at least REVIEW.
+- `tests/test_fusion.py` (12 tests); total 74 passing.
+- `demo_data/`: 12 hand-picked orders (reviews from the text test split, most-confident test photos; BoxCondition only for packages), `orders.csv`, `images/`, `expected.csv`, README with sources/licences. All 12 give the intended status.
+- `notebooks/07_fusion.ipynb` executed; `results/fusion_simulated_test.csv`; metrics in `results/metrics.json → fusion`.
+
+**Tuning:** best single setting on validation = text 1.0 / image 0 / tag 0 (val F1 0.915), because the rules already use the photo decision; 780 settings within 0.01 F1. Chosen: most balanced within 0.01 → **text 0.30, image 0.40, tag 0.30, review 0.40, urgent 0.70** (val F1 0.905). Written to config.yaml; to be reviewed with Denis at the end.
+
+**Results (298 simulated test orders, 55% problematic)**
+
+| strategy | precision | recall | F1 |
+|---|---|---|---|
+| text only (review negative) | 0.856 | 0.506 | 0.636 |
+| photo only | 0.896 | 0.683 | 0.775 |
+| combined, weighted score only | 0.942 | 0.598 | 0.731 |
+| **combined, score + rules (ours)** | 0.846 | **0.902** | **0.873** |
+
+**Hosting research (for Phase 8):** Render free (512 MB, 0.1 CPU, sleeps); Render Starter $7/month (0.5 CPU, no sleep); GitHub Student Developer Pack gives Heroku $13/month credit for 24 months (needs student verification); Azure for Students $100. Suggested to Denis: apply for the Student Pack now.

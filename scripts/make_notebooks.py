@@ -340,6 +340,98 @@ print("Images per fruit and class:"); display(produce["subtype_counts"])"""),
     ]
 
 
+def nb_07_fusion():
+    return [
+        md("""
+# 07 · Fusion: one decision per order from the review AND the photo
+
+**Goal:** turn three signals (review sentiment, issue tags, photo check) into one status per order,
+**OK / REVIEW / URGENT**, with reasons a support agent can read, and show that combining them flags
+problematic orders better than text or photo alone.
+
+**Inputs:** the deployed ONNX models (`models/deploy/`, via `src/inference.py`), the text and image **test** splits.
+**Outputs:** `results/metrics.json → fusion`, `results/fusion_simulated_test.csv`, figures, `demo_data/`.
+
+All logic is in `src/fusion.py`.
+
+> ⚠️ **The orders are simulated.** There is no public dataset of orders with both a review and a customer
+> photo, so each order pairs a test review with a test photo from a *different* customer. Ground truth:
+> an order is problematic if the photo's true label is bad **or** the review's true label is negative.
+"""),
+        code(SETUP),
+        md("""
+## 1. How the decision is made
+
+**Step 1, risk score:** `risk = w_text · P(negative) + w_img · P(bad photo) + w_tag · (any issue tag)`.
+Without a photo the image weight is shared out over text and tags. `risk ≥ 0.70` → URGENT, `≥ 0.40` → REVIEW.
+
+**Step 2, rules when review and photo can be compared** (a single weighted number would average away disagreement):
+
+| review | photo | status | reason shown |
+|---|---|---|---|
+| negative | bad | URGENT | text and photo both show a problem |
+| positive | bad | REVIEW | photo contradicts the positive review |
+| claims damage/spoilage | clean | REVIEW | claim not visible in the photo: possible false claim |
+| negative, no visible-damage claim | clean | REVIEW | service/product problem a photo can't show |
+| neutral | bad | at least REVIEW | photo shows damage/rot |
+| no photo | – | from the score | "decision based on the text only" |
+
+A claim only counts as "not visible" if the photo model *could* see it: the package model sees box damage,
+the produce model sees rot. "Stopped working" is not visible on a package photo, so it is not a false claim.
+"""),
+        md("## 2. Run the experiment: simulated orders → deployed models → tuning → comparison"),
+        code("""from src.fusion import run_fusion_experiment
+exp = run_fusion_experiment()
+test = exp["test"]
+print(f"{len(exp['val'])} validation orders (for tuning), {len(test)} test orders (for results)")
+pd.crosstab([test["category"], test["true_text"]], test["true_photo"], margins=True)"""),
+        md("""
+### Weight tuning (on the validation orders)
+Grid search over all weights (step 0.05) and the REVIEW threshold. Because the rules already use the photo's
+yes/no decision, hundreds of settings score almost the same; the single best one is extreme (text weight 1.0,
+image weight 0). We therefore take the **most balanced** weights within 0.01 F1 of the best.
+"""),
+        code("""print("chosen:", exp["tuned"], "| validation F1", exp["val_f1"])
+print("search:", exp["tuning_info"])"""),
+        md("## 3. Results: text only vs photo only vs combined (test orders)"),
+        code("""from src.fusion import plot_strategy_comparison
+display(exp["comparison"])
+plot_strategy_comparison(exp["comparison"]);"""),
+        md("### How the statuses line up with the true situation"),
+        code("""exp["status_table"]"""),
+        md("""
+## 4. Demo orders (for the video and the website)
+
+12 hand-picked orders from the test splits that show every rule (`scripts/make_demo_data.py`).
+Photos are the test photos the model is most confident about, so the live demo behaves as described.
+"""),
+        code("""demo = pd.read_csv("../demo_data/expected.csv")
+display(demo[["order_id", "status", "sentiment", "tags", "photo_p_bad", "shows"]])
+from src.fusion import plot_demo_orders
+plot_demo_orders();"""),
+        md(FINDINGS_FUSION),
+    ]
+
+
+FINDINGS_FUSION = """
+## Key findings
+
+- **Combining review and photo catches far more problematic orders.** On 298 simulated test orders, the fusion
+  (score + rules) flags **90% of problematic orders** (recall 0.90, precision 0.85, F1 **0.87**), compared with
+  51% for the review alone (F1 0.64) and 68% for the photo alone (F1 0.78).
+- **The rules matter more than the weights.** A weighted score without rules reaches only F1 0.73, because it averages
+  away the cases where review and photo *disagree*, and those are exactly the ones a person should check
+  (happy review + damaged box, damage claim + intact box).
+- **Weights barely matter** once the rules use the photo decision: 780 settings were within 0.01 F1 of the best.
+  The chosen weights (text 0.30, photo 0.40, tags 0.30) keep every signal visible in the risk score.
+- **Explainable by design:** every decision comes with reason codes, e.g. "Review claims damaged packaging, but the
+  photo looks intact: check it (possible false claim)".
+- **Trade-off:** fusion flags 59% of orders for a human (55% are truly problematic in this simulation). In a real shop
+  the REVIEW threshold sets how many orders the support team must check.
+- **Limitation:** pairs are simulated (review and photo from different customers), so real-world numbers will differ.
+"""
+
+
 COLAB_SETUP = '''# ---- Setup: GPU check, Google Drive, code, packages ----
 import os, subprocess, sys
 from pathlib import Path
@@ -574,6 +666,7 @@ NOTEBOOKS = {
     "01": ("01_text_data.ipynb", nb_01_text_data),
     "02": ("02_text_models.ipynb", nb_02_text_models),
     "04": ("04_image_data.ipynb", nb_04_image_data),
+    "07": ("07_fusion.ipynb", nb_07_fusion),
     "colab03": ("colab_03_finetune_text.ipynb", nb_colab_03_finetune_text),
     "colab05": ("colab_05_image_packages.ipynb", lambda: nb_colab_image("packages", "05")),
     "colab06": ("colab_06_image_produce.ipynb", lambda: nb_colab_image("produce", "06")),

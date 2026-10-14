@@ -159,11 +159,22 @@ routing:
   default: packages
 
 # ------------------------------------------------------------- fusion -----
-# Starting values only. Phase 6 tunes them on the simulated-orders validation set.
+# Tuned on the simulated-orders validation set (notebooks/07_fusion.ipynb, 2026-10-14):
+# the most balanced weights within 0.01 F1 of the best (best single setting was text 1.0 / image 0,
+# val F1 0.915; this one 0.905). To be reviewed once more at the end of the project.
 fusion:
-  weights: {text: 0.5, image: 0.35, tag: 0.15}
+  weights: {text: 0.30, image: 0.40, tag: 0.30}
   thresholds: {review: 0.40, urgent: 0.70}
-  n_simulated_orders: 300
+  n_simulated_orders: 300         # per set: one set to tune the weights, one to report results
+  # Share of each (true review label + true photo label) combination in the simulated orders,
+  # so every 2x2 case appears often enough. Shares must add up to 1.
+  pairing_mix:
+    negative+bad: 0.20
+    negative+good: 0.15
+    neutral+bad: 0.10
+    neutral+good: 0.15
+    positive+bad: 0.10
+    positive+good: 0.30
 
 # ---------------------------------------------------------------- app -----
 app:

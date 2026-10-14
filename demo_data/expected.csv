@@ -1,0 +1,13 @@
+order_id,status,risk,sentiment,tags,photo_p_bad,reasons,shows
+DEMO-01,URGENT,0.9838,negative,"damaged_packaging, defective_product",0.9998,"Text and photo both show a problem. | Review is negative (P = 95%). | Review mentions: damaged packaging, defective product. | Photo shows damage (P = 100%).",negative review + damaged box -> URGENT
+DEMO-02,URGENT,0.9885,negative,"spoiled_food, refund_request",1.0,"Text and photo both show a problem. | Review is negative (P = 96%). | Review mentions: spoiled food, refund request. | Photo shows rot (P = 100%).",negative review + rotten fruit -> URGENT
+DEMO-03,REVIEW,0.4012,positive,,0.9998,Photo shows damage although the review is positive. | Photo shows damage (P = 100%).,positive review but damaged box -> REVIEW
+DEMO-04,REVIEW,0.401,positive,,1.0,Photo shows rot although the review is positive. | Photo shows rot (P = 100%).,"'fresh, well packaged' but rotten photo -> REVIEW"
+DEMO-05,REVIEW,0.5761,negative,"damaged_packaging, defective_product",0.0015,"Review claims damaged packaging, but the photo looks intact: check it (possible false claim). | Review is negative (P = 92%). | Review mentions: damaged packaging, defective product.","claims it came broken, box looks intact -> REVIEW (possible false claim)"
+DEMO-06,REVIEW,0.5609,negative,spoiled_food,0.0,"Review claims spoiled food, but the photo looks fresh: check it (possible false claim). | Review is negative (P = 87%). | Review mentions: spoiled food.","claims stale/hard fruit, photo looks fresh -> REVIEW (possible false claim)"
+DEMO-07,REVIEW,0.5921,negative,defective_product,0.0079,"Negative review, photo looks intact: a service or product problem a photo can't show. | Review is negative (P = 96%). | Review mentions: defective product.","stopped working, box fine -> REVIEW (problem a photo can't show)"
+DEMO-08,OK,0.0044,positive,,0.0088,No problem found.,"happy customer, intact box -> OK"
+DEMO-09,OK,0.001,positive,,0.0,No problem found.,"happy customer, fresh fruit -> OK"
+DEMO-10,URGENT,0.9755,negative,refund_request,,No photo: decision based on the text only. | Review is negative (P = 95%). | Review mentions: refund request.,"angry review, no photo -> text-only decision"
+DEMO-11,OK,0.0022,positive,,,No photo: decision based on the text only. | No problem found.,"happy review, no photo -> OK (text only)"
+DEMO-12,REVIEW,0.4107,neutral,,1.0,Photo shows rot (P = 100%).,"neutral review, rotten photo -> REVIEW"
