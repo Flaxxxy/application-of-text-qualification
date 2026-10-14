@@ -137,6 +137,8 @@ GROUP_COLORS = {"ours": "#2a78d6", "ready-made": "#eb6834", "fine-tuned": "#1baf
 def model_group(name: str) -> str:
     if name.startswith("bench_"):
         return "ready-made"
+    if name in ("mobilenetv2",):
+        return "fine-tuned"  # pre-trained on ImageNet, adapted to our photos
     if name.endswith("_finetuned"):
         return "fine-tuned"
     return "ours"
@@ -203,3 +205,18 @@ def plot_confusion_matrix(cm: list[list[int]], labels: list[str], title: str, fi
     if filename:
         save(fig, filename)
     return fig
+
+
+def image_comparison_table(domain: str) -> pd.DataFrame:
+    """One row per image model of a domain (test set, tuned threshold): for slides and the app."""
+    section = load_metrics().get(f"image_{domain}", {})
+    rows = []
+    for name, m in section.items():
+        bad = m["labels"][1]
+        t, d = m["test"], m["test_default"]
+        rows.append({"model": name, "type": m.get("type", ""), "test macro-F1": t["macro_f1"], "accuracy": t["accuracy"],
+                     f"recall {bad}": t["per_class"][bad]["recall"], f"precision {bad}": t["per_class"][bad]["precision"],
+                     "threshold": m["threshold"], "macro-F1 at 0.5": d["macro_f1"], "size MB": m.get("size_mb")})
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows).sort_values("test macro-F1", ascending=False).set_index("model")

@@ -441,12 +441,45 @@ for f in files:
 print("Copy these files from Google Drive (MyDrive/rrf/...) into the SAME paths in the project:\\n")
 for f in files:
     print("  ", f)'''),
-        md("""
-## Key findings
-
-*(Filled in after the run.)*
-"""),
+        md(FINDINGS_IMAGE[domain]),
     ]
+
+
+FINDINGS_IMAGE = {
+    "packages": """
+## Key findings (run of 2026-10-14; test set of 442 photos, threshold tuned on validation)
+
+| model | macro-F1 | recall damaged | precision damaged |
+|---|---|---|---|
+| **MobileNetV2** | **0.839** | 0.872 | 0.807 |
+| small CNN | 0.509 | 0.910 | 0.520 |
+| CLIP zero-shot (no training) | 0.348 | 0.967 | 0.477 |
+
+- **Transfer learning is essential here:** with ~1,500 mixed training photos the CNN from scratch barely beats guessing;
+  MobileNetV2's ImageNet features make the difference. A general model with no training (CLIP) is no better than guessing.
+- **Per source:** real cardboard photos (BoxCondition) 0.894, Roboflow 0.800, Kaggle 3D renders 0.656. Grad-CAM shows the
+  model looks at crushed corners, holes and torn flaps on real photos, but at the conveyor belt on the renders.
+- **Fine-tuning the top layers did not help** (validation loss rose from 0.40 to 0.49), so the model from the frozen-base stage
+  is kept. The code now checks this automatically.
+- Two small CNN and MobileNetV2 runs were repeated on the Mac (CPU) with the same code and seed after improving the threshold
+  rule and the stage selection; the MobileNetV2 predictions are identical on CPU and GPU.
+""",
+    "produce": """
+## Key findings (run of 2026-10-14; test set of 447 photos, threshold tuned on validation)
+
+| model | macro-F1 | recall rotten | precision rotten |
+|---|---|---|---|
+| **MobileNetV2** | **0.977** | 0.962 | 1.000 |
+| small CNN | 0.940 | 0.966 | 0.937 |
+| CLIP zero-shot (no training) | 0.716 | 0.969 | 0.715 |
+
+- **Rot is easy to see:** even the CNN from scratch reaches 0.94, and MobileNetV2 0.977 with no false alarms on the test set.
+- **Per fruit (MobileNetV2):** banana 1.000, orange 0.978, apple 0.952. Grad-CAM highlights the brown/mouldy patches.
+- **Fine-tuning helped** (validation loss 0.06 → 0.045), so the fine-tuned model is kept.
+- These scores are honest only because 84% of the original images (copies) were removed in Phase 3; with copies in the
+  test set the numbers would look even higher but mean less.
+""",
+}
 
 
 def nb_colab_03_finetune_text():

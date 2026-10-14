@@ -1,0 +1,105 @@
+{
+  "labels": [
+    "intact",
+    "damaged"
+  ],
+  "threshold": 0.3984,
+  "test_default": {
+    "n": 442,
+    "accuracy": 0.5973,
+    "macro_f1": 0.5933,
+    "per_class": {
+      "intact": {
+        "precision": 0.6587,
+        "recall": 0.4762,
+        "f1": 0.5528,
+        "support": 231
+      },
+      "damaged": {
+        "precision": 0.56,
+        "recall": 0.7299,
+        "f1": 0.6337,
+        "support": 211
+      }
+    },
+    "confusion_matrix": [
+      [
+        110,
+        121
+      ],
+      [
+        57,
+        154
+      ]
+    ],
+    "labels": [
+      "intact",
+      "damaged"
+    ]
+  },
+  "test": {
+    "n": 442,
+    "accuracy": 0.5566,
+    "macro_f1": 0.5087,
+    "per_class": {
+      "intact": {
+        "precision": 0.7397,
+        "recall": 0.2338,
+        "f1": 0.3553,
+        "support": 231
+      },
+      "damaged": {
+        "precision": 0.5203,
+        "recall": 0.91,
+        "f1": 0.6621,
+        "support": 211
+      }
+    },
+    "confusion_matrix": [
+      [
+        54,
+        177
+      ],
+      [
+        19,
+        192
+      ]
+    ],
+    "labels": [
+      "intact",
+      "damaged"
+    ]
+  },
+  "test_per_group": {
+    "packages_boxcondition": {
+      "n": 266,
+      "accuracy": 0.5414,
+      "macro_f1": 0.4659,
+      "recall_bad": 0.9037
+    },
+    "packages_kaggle": {
+      "n": 71,
+      "accuracy": 0.5493,
+      "macro_f1": 0.3813,
+      "recall_bad": 1.0
+    },
+    "packages_roboflow": {
+      "n": 105,
+      "accuracy": 0.6,
+      "macro_f1": 0.6,
+      "recall_bad": 0.8421
+    }
+  },
+  "type": "CNN from scratch",
+  "threshold_tuning": {
+    "threshold": 0.3984,
+    "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+    "val_recall_bad": 0.9615,
+    "val_f1_bad": 0.7117
+  },
+  "epochs_run": 24,
+  "n_train": 1535,
+  "params": 3452482,
+  "size_mb": 13.9,
+  "trained_on": "local CPU (Mac), same code and seed as Colab"
+}

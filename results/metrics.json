@@ -1005,7 +1005,7 @@
         "intact",
         "damaged"
       ],
-      "threshold": 0.2677,
+      "threshold": 0.1293,
       "test_default": {
         "n": 442,
         "accuracy": 0.4548,
@@ -1041,30 +1041,30 @@
       },
       "test": {
         "n": 442,
-        "accuracy": 0.4751,
-        "macro_f1": 0.4068,
+        "accuracy": 0.4774,
+        "macro_f1": 0.3478,
         "per_class": {
           "intact": {
-            "precision": 0.4918,
-            "recall": 0.1299,
-            "f1": 0.2055,
+            "precision": 0.5,
+            "recall": 0.0303,
+            "f1": 0.0571,
             "support": 231
           },
           "damaged": {
-            "precision": 0.4724,
-            "recall": 0.8531,
-            "f1": 0.6081,
+            "precision": 0.4766,
+            "recall": 0.9668,
+            "f1": 0.6385,
             "support": 211
           }
         },
         "confusion_matrix": [
           [
-            30,
-            201
+            7,
+            224
           ],
           [
-            31,
-            180
+            7,
+            204
           ]
         ],
         "labels": [
@@ -1075,34 +1075,246 @@
       "test_per_group": {
         "packages_boxcondition": {
           "n": 266,
-          "accuracy": 0.4662,
-          "macro_f1": 0.3936,
-          "recall_bad": 0.8
+          "accuracy": 0.5075,
+          "macro_f1": 0.379,
+          "recall_bad": 0.9481
         },
         "packages_kaggle": {
           "n": 71,
-          "accuracy": 0.6338,
-          "macro_f1": 0.582,
-          "recall_bad": 0.9211
+          "accuracy": 0.5352,
+          "macro_f1": 0.3486,
+          "recall_bad": 1.0
         },
         "packages_roboflow": {
           "n": 105,
-          "accuracy": 0.3905,
-          "macro_f1": 0.3237,
-          "recall_bad": 0.9737
+          "accuracy": 0.3619,
+          "macro_f1": 0.2657,
+          "recall_bad": 1.0
         }
       },
       "type": "ready-made (zero-shot CLIP, no training)",
       "threshold_tuning": {
-        "threshold": 0.2677,
-        "rule": "highest threshold with val recall(bad) >= 0.9",
-        "val_recall_bad": 0.9038
+        "threshold": 0.1293,
+        "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+        "val_recall_bad": 1.0,
+        "val_f1_bad": 0.648
       },
       "prompts": [
         "a photo of an intact, undamaged package or box",
         "a photo of a damaged, crushed, torn or dented package or box"
       ],
       "model": "openai/clip-vit-base-patch32"
+    },
+    "mobilenetv2": {
+      "labels": [
+        "intact",
+        "damaged"
+      ],
+      "threshold": 0.4069,
+      "test_default": {
+        "n": 442,
+        "accuracy": 0.8416,
+        "macro_f1": 0.8407,
+        "per_class": {
+          "intact": {
+            "precision": 0.8286,
+            "recall": 0.8788,
+            "f1": 0.8529,
+            "support": 231
+          },
+          "damaged": {
+            "precision": 0.8579,
+            "recall": 0.8009,
+            "f1": 0.8284,
+            "support": 211
+          }
+        },
+        "confusion_matrix": [
+          [
+            203,
+            28
+          ],
+          [
+            42,
+            169
+          ]
+        ],
+        "labels": [
+          "intact",
+          "damaged"
+        ]
+      },
+      "test": {
+        "n": 442,
+        "accuracy": 0.8394,
+        "macro_f1": 0.8394,
+        "per_class": {
+          "intact": {
+            "precision": 0.8738,
+            "recall": 0.8095,
+            "f1": 0.8404,
+            "support": 231
+          },
+          "damaged": {
+            "precision": 0.807,
+            "recall": 0.872,
+            "f1": 0.8383,
+            "support": 211
+          }
+        },
+        "confusion_matrix": [
+          [
+            187,
+            44
+          ],
+          [
+            27,
+            184
+          ]
+        ],
+        "labels": [
+          "intact",
+          "damaged"
+        ]
+      },
+      "test_per_group": {
+        "packages_boxcondition": {
+          "n": 266,
+          "accuracy": 0.8947,
+          "macro_f1": 0.8941,
+          "recall_bad": 0.9556
+        },
+        "packages_kaggle": {
+          "n": 71,
+          "accuracy": 0.662,
+          "macro_f1": 0.6565,
+          "recall_bad": 0.7368
+        },
+        "packages_roboflow": {
+          "n": 105,
+          "accuracy": 0.819,
+          "macro_f1": 0.8005,
+          "recall_bad": 0.7105
+        }
+      },
+      "type": "MobileNetV2 transfer learning",
+      "threshold_tuning": {
+        "threshold": 0.4069,
+        "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+        "val_recall_bad": 0.9038,
+        "val_f1_bad": 0.8393
+      },
+      "epochs_run": 21,
+      "kept_stage": "head (fine-tuning did not improve val loss)",
+      "n_train": 1535,
+      "params": 2260546,
+      "size_mb": 9.6,
+      "trained_on": "local CPU (Mac), same code and seed as Colab"
+    },
+    "small_cnn": {
+      "labels": [
+        "intact",
+        "damaged"
+      ],
+      "threshold": 0.3984,
+      "test_default": {
+        "n": 442,
+        "accuracy": 0.5973,
+        "macro_f1": 0.5933,
+        "per_class": {
+          "intact": {
+            "precision": 0.6587,
+            "recall": 0.4762,
+            "f1": 0.5528,
+            "support": 231
+          },
+          "damaged": {
+            "precision": 0.56,
+            "recall": 0.7299,
+            "f1": 0.6337,
+            "support": 211
+          }
+        },
+        "confusion_matrix": [
+          [
+            110,
+            121
+          ],
+          [
+            57,
+            154
+          ]
+        ],
+        "labels": [
+          "intact",
+          "damaged"
+        ]
+      },
+      "test": {
+        "n": 442,
+        "accuracy": 0.5566,
+        "macro_f1": 0.5087,
+        "per_class": {
+          "intact": {
+            "precision": 0.7397,
+            "recall": 0.2338,
+            "f1": 0.3553,
+            "support": 231
+          },
+          "damaged": {
+            "precision": 0.5203,
+            "recall": 0.91,
+            "f1": 0.6621,
+            "support": 211
+          }
+        },
+        "confusion_matrix": [
+          [
+            54,
+            177
+          ],
+          [
+            19,
+            192
+          ]
+        ],
+        "labels": [
+          "intact",
+          "damaged"
+        ]
+      },
+      "test_per_group": {
+        "packages_boxcondition": {
+          "n": 266,
+          "accuracy": 0.5414,
+          "macro_f1": 0.4659,
+          "recall_bad": 0.9037
+        },
+        "packages_kaggle": {
+          "n": 71,
+          "accuracy": 0.5493,
+          "macro_f1": 0.3813,
+          "recall_bad": 1.0
+        },
+        "packages_roboflow": {
+          "n": 105,
+          "accuracy": 0.6,
+          "macro_f1": 0.6,
+          "recall_bad": 0.8421
+        }
+      },
+      "type": "CNN from scratch",
+      "threshold_tuning": {
+        "threshold": 0.3984,
+        "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+        "val_recall_bad": 0.9615,
+        "val_f1_bad": 0.7117
+      },
+      "epochs_run": 24,
+      "n_train": 1535,
+      "params": 3452482,
+      "size_mb": 13.9,
+      "trained_on": "local CPU (Mac), same code and seed as Colab"
     }
   },
   "image_produce": {
@@ -1111,7 +1323,7 @@
         "fresh",
         "rotten"
       ],
-      "threshold": 0.1926,
+      "threshold": 0.18,
       "test_default": {
         "n": 447,
         "accuracy": 0.8009,
@@ -1147,26 +1359,235 @@
       },
       "test": {
         "n": 447,
-        "accuracy": 0.7651,
-        "macro_f1": 0.7296,
+        "accuracy": 0.7562,
+        "macro_f1": 0.716,
         "per_class": {
           "fresh": {
-            "precision": 0.9091,
-            "recall": 0.4839,
-            "f1": 0.6316,
+            "precision": 0.914,
+            "recall": 0.457,
+            "f1": 0.6093,
             "support": 186
           },
           "rotten": {
-            "precision": 0.7241,
-            "recall": 0.9655,
-            "f1": 0.8276,
+            "precision": 0.7147,
+            "recall": 0.9693,
+            "f1": 0.8228,
             "support": 261
           }
         },
         "confusion_matrix": [
           [
-            90,
-            96
+            85,
+            101
+          ],
+          [
+            8,
+            253
+          ]
+        ],
+        "labels": [
+          "fresh",
+          "rotten"
+        ]
+      },
+      "test_per_group": {
+        "apple": {
+          "n": 156,
+          "accuracy": 0.7051,
+          "macro_f1": 0.537,
+          "recall_bad": 1.0
+        },
+        "banana": {
+          "n": 157,
+          "accuracy": 0.9427,
+          "macro_f1": 0.9411,
+          "recall_bad": 0.9158
+        },
+        "orange": {
+          "n": 134,
+          "accuracy": 0.597,
+          "macro_f1": 0.5377,
+          "recall_bad": 1.0
+        }
+      },
+      "type": "ready-made (zero-shot CLIP, no training)",
+      "threshold_tuning": {
+        "threshold": 0.18,
+        "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+        "val_recall_bad": 0.9225,
+        "val_f1_bad": 0.8013
+      },
+      "prompts": [
+        "a photo of a fresh fruit",
+        "a photo of a rotten, moldy or spoiled fruit"
+      ],
+      "model": "openai/clip-vit-base-patch32"
+    },
+    "mobilenetv2": {
+      "labels": [
+        "fresh",
+        "rotten"
+      ],
+      "threshold": 0.3371,
+      "test_default": {
+        "n": 447,
+        "accuracy": 0.9687,
+        "macro_f1": 0.9681,
+        "per_class": {
+          "fresh": {
+            "precision": 0.93,
+            "recall": 1.0,
+            "f1": 0.9637,
+            "support": 186
+          },
+          "rotten": {
+            "precision": 1.0,
+            "recall": 0.9464,
+            "f1": 0.9724,
+            "support": 261
+          }
+        },
+        "confusion_matrix": [
+          [
+            186,
+            0
+          ],
+          [
+            14,
+            247
+          ]
+        ],
+        "labels": [
+          "fresh",
+          "rotten"
+        ]
+      },
+      "test": {
+        "n": 447,
+        "accuracy": 0.9776,
+        "macro_f1": 0.9771,
+        "per_class": {
+          "fresh": {
+            "precision": 0.949,
+            "recall": 1.0,
+            "f1": 0.9738,
+            "support": 186
+          },
+          "rotten": {
+            "precision": 1.0,
+            "recall": 0.9617,
+            "f1": 0.9805,
+            "support": 261
+          }
+        },
+        "confusion_matrix": [
+          [
+            186,
+            0
+          ],
+          [
+            10,
+            251
+          ]
+        ],
+        "labels": [
+          "fresh",
+          "rotten"
+        ]
+      },
+      "test_per_group": {
+        "apple": {
+          "n": 156,
+          "accuracy": 0.9551,
+          "macro_f1": 0.9518,
+          "recall_bad": 0.9314
+        },
+        "banana": {
+          "n": 157,
+          "accuracy": 1.0,
+          "macro_f1": 1.0,
+          "recall_bad": 1.0
+        },
+        "orange": {
+          "n": 134,
+          "accuracy": 0.9776,
+          "macro_f1": 0.9775,
+          "recall_bad": 0.9531
+        }
+      },
+      "type": "MobileNetV2 transfer learning",
+      "epochs_run": 30,
+      "n_train": 1558,
+      "params": 2260546,
+      "size_mb": 9.6,
+      "threshold_tuning": {
+        "threshold": 0.3371,
+        "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+        "val_recall_bad": 0.9922,
+        "val_f1_bad": 0.9922
+      }
+    },
+    "small_cnn": {
+      "labels": [
+        "fresh",
+        "rotten"
+      ],
+      "threshold": 0.4383,
+      "test_default": {
+        "n": 447,
+        "accuracy": 0.9418,
+        "macro_f1": 0.9401,
+        "per_class": {
+          "fresh": {
+            "precision": 0.9348,
+            "recall": 0.9247,
+            "f1": 0.9297,
+            "support": 186
+          },
+          "rotten": {
+            "precision": 0.9468,
+            "recall": 0.954,
+            "f1": 0.9504,
+            "support": 261
+          }
+        },
+        "confusion_matrix": [
+          [
+            172,
+            14
+          ],
+          [
+            12,
+            249
+          ]
+        ],
+        "labels": [
+          "fresh",
+          "rotten"
+        ]
+      },
+      "test": {
+        "n": 447,
+        "accuracy": 0.9418,
+        "macro_f1": 0.9398,
+        "per_class": {
+          "fresh": {
+            "precision": 0.9494,
+            "recall": 0.9086,
+            "f1": 0.9286,
+            "support": 186
+          },
+          "rotten": {
+            "precision": 0.9368,
+            "recall": 0.9655,
+            "f1": 0.9509,
+            "support": 261
+          }
+        },
+        "confusion_matrix": [
+          [
+            169,
+            17
           ],
           [
             9,
@@ -1181,34 +1602,36 @@
       "test_per_group": {
         "apple": {
           "n": 156,
-          "accuracy": 0.7308,
-          "macro_f1": 0.5965,
-          "recall_bad": 1.0
+          "accuracy": 0.9615,
+          "macro_f1": 0.9582,
+          "recall_bad": 0.951
         },
         "banana": {
           "n": 157,
-          "accuracy": 0.9363,
-          "macro_f1": 0.9346,
-          "recall_bad": 0.9053
+          "accuracy": 0.9618,
+          "macro_f1": 0.9593,
+          "recall_bad": 1.0
         },
         "orange": {
           "n": 134,
-          "accuracy": 0.6045,
-          "macro_f1": 0.549,
-          "recall_bad": 1.0
+          "accuracy": 0.8955,
+          "macro_f1": 0.8955,
+          "recall_bad": 0.9375
         }
       },
-      "type": "ready-made (zero-shot CLIP, no training)",
+      "type": "CNN from scratch",
       "threshold_tuning": {
-        "threshold": 0.1926,
-        "rule": "highest threshold with val recall(bad) >= 0.9",
-        "val_recall_bad": 0.907
+        "threshold": 0.4383,
+        "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+        "val_recall_bad": 0.9612,
+        "val_f1_bad": 0.9538
       },
-      "prompts": [
-        "a photo of a fresh fruit",
-        "a photo of a rotten, moldy or spoiled fruit"
-      ],
-      "model": "openai/clip-vit-base-patch32"
+      "epochs_run": 11,
+      "kept_stage": "scratch",
+      "n_train": 1558,
+      "params": 3452482,
+      "size_mb": 13.9,
+      "trained_on": "local CPU (Mac), same code and seed as Colab"
     }
   }
 }

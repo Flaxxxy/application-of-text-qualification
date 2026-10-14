@@ -125,3 +125,23 @@ Packages after adding it: 4,953 raw → 2,195 unique (BoxCondition 650 damaged /
 **Zero-shot CLIP baseline (test set)**
 - packages: macro-F1 0.454 at threshold 0.5, 0.407 at the recall-tuned threshold (close to guessing)
 - produce: macro-F1 0.798 at 0.5, 0.730 at the recall-tuned threshold
+
+**Colab runs done (2026-10-14).** Files were dropped in `app/` and sorted into `results/colab`, `results/predictions`, `results/figures`, `models/train`.
+
+**Fixes after the Colab runs**
+- Threshold rule: "highest threshold with val recall >= 0.9" sat at the edge (produce: test recall 0.87, worse than 0.5). New rule: best val F1(bad) among thresholds with val recall >= 0.9. Val predictions are now saved too.
+- MobileNetV2 stage selection: fine-tuning raised val loss for packages (0.40 → 0.49) but the code kept the best fine-tuned weights. Now the frozen-base weights are kept unless fine-tuning improves val loss.
+- Re-scored produce MobileNetV2 from the saved model (CPU predictions identical to Colab: same macro-F1 at the old threshold). Retrained locally on CPU (same code + seed): small CNN (both domains) and packages MobileNetV2. CLIP re-run.
+
+**Final image results (test set, tuned threshold)**
+
+| domain | model | macro-F1 | recall bad | precision bad |
+|---|---|---|---|---|
+| packages | mobilenetv2 | 0.839 | 0.872 | 0.807 |
+| packages | small_cnn | 0.509 | 0.910 | 0.520 |
+| packages | CLIP zero-shot | 0.348 | 0.967 | 0.477 |
+| produce | mobilenetv2 | 0.977 | 0.962 | 1.000 |
+| produce | small_cnn | 0.940 | 0.966 | 0.937 |
+| produce | CLIP zero-shot | 0.716 | 0.969 | 0.715 |
+
+Packages MobileNetV2 per source: BoxCondition 0.894, Roboflow 0.800, Kaggle renders 0.656 (Grad-CAM: looks at the conveyor belt on renders). Produce per fruit: banana 1.000, orange 0.978, apple 0.952.

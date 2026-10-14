@@ -1,0 +1,106 @@
+{
+  "labels": [
+    "fresh",
+    "rotten"
+  ],
+  "threshold": 0.4383,
+  "test_default": {
+    "n": 447,
+    "accuracy": 0.9418,
+    "macro_f1": 0.9401,
+    "per_class": {
+      "fresh": {
+        "precision": 0.9348,
+        "recall": 0.9247,
+        "f1": 0.9297,
+        "support": 186
+      },
+      "rotten": {
+        "precision": 0.9468,
+        "recall": 0.954,
+        "f1": 0.9504,
+        "support": 261
+      }
+    },
+    "confusion_matrix": [
+      [
+        172,
+        14
+      ],
+      [
+        12,
+        249
+      ]
+    ],
+    "labels": [
+      "fresh",
+      "rotten"
+    ]
+  },
+  "test": {
+    "n": 447,
+    "accuracy": 0.9418,
+    "macro_f1": 0.9398,
+    "per_class": {
+      "fresh": {
+        "precision": 0.9494,
+        "recall": 0.9086,
+        "f1": 0.9286,
+        "support": 186
+      },
+      "rotten": {
+        "precision": 0.9368,
+        "recall": 0.9655,
+        "f1": 0.9509,
+        "support": 261
+      }
+    },
+    "confusion_matrix": [
+      [
+        169,
+        17
+      ],
+      [
+        9,
+        252
+      ]
+    ],
+    "labels": [
+      "fresh",
+      "rotten"
+    ]
+  },
+  "test_per_group": {
+    "apple": {
+      "n": 156,
+      "accuracy": 0.9615,
+      "macro_f1": 0.9582,
+      "recall_bad": 0.951
+    },
+    "banana": {
+      "n": 157,
+      "accuracy": 0.9618,
+      "macro_f1": 0.9593,
+      "recall_bad": 1.0
+    },
+    "orange": {
+      "n": 134,
+      "accuracy": 0.8955,
+      "macro_f1": 0.8955,
+      "recall_bad": 0.9375
+    }
+  },
+  "type": "CNN from scratch",
+  "threshold_tuning": {
+    "threshold": 0.4383,
+    "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+    "val_recall_bad": 0.9612,
+    "val_f1_bad": 0.9538
+  },
+  "epochs_run": 11,
+  "kept_stage": "scratch",
+  "n_train": 1558,
+  "params": 3452482,
+  "size_mb": 13.9,
+  "trained_on": "local CPU (Mac), same code and seed as Colab"
+}

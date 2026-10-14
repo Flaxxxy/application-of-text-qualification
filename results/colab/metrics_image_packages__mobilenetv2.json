@@ -1,0 +1,106 @@
+{
+  "labels": [
+    "intact",
+    "damaged"
+  ],
+  "threshold": 0.4069,
+  "test_default": {
+    "n": 442,
+    "accuracy": 0.8416,
+    "macro_f1": 0.8407,
+    "per_class": {
+      "intact": {
+        "precision": 0.8286,
+        "recall": 0.8788,
+        "f1": 0.8529,
+        "support": 231
+      },
+      "damaged": {
+        "precision": 0.8579,
+        "recall": 0.8009,
+        "f1": 0.8284,
+        "support": 211
+      }
+    },
+    "confusion_matrix": [
+      [
+        203,
+        28
+      ],
+      [
+        42,
+        169
+      ]
+    ],
+    "labels": [
+      "intact",
+      "damaged"
+    ]
+  },
+  "test": {
+    "n": 442,
+    "accuracy": 0.8394,
+    "macro_f1": 0.8394,
+    "per_class": {
+      "intact": {
+        "precision": 0.8738,
+        "recall": 0.8095,
+        "f1": 0.8404,
+        "support": 231
+      },
+      "damaged": {
+        "precision": 0.807,
+        "recall": 0.872,
+        "f1": 0.8383,
+        "support": 211
+      }
+    },
+    "confusion_matrix": [
+      [
+        187,
+        44
+      ],
+      [
+        27,
+        184
+      ]
+    ],
+    "labels": [
+      "intact",
+      "damaged"
+    ]
+  },
+  "test_per_group": {
+    "packages_boxcondition": {
+      "n": 266,
+      "accuracy": 0.8947,
+      "macro_f1": 0.8941,
+      "recall_bad": 0.9556
+    },
+    "packages_kaggle": {
+      "n": 71,
+      "accuracy": 0.662,
+      "macro_f1": 0.6565,
+      "recall_bad": 0.7368
+    },
+    "packages_roboflow": {
+      "n": 105,
+      "accuracy": 0.819,
+      "macro_f1": 0.8005,
+      "recall_bad": 0.7105
+    }
+  },
+  "type": "MobileNetV2 transfer learning",
+  "threshold_tuning": {
+    "threshold": 0.4069,
+    "rule": "best val F1(bad) among thresholds with val recall(bad) >= 0.9",
+    "val_recall_bad": 0.9038,
+    "val_f1_bad": 0.8393
+  },
+  "epochs_run": 21,
+  "kept_stage": "head (fine-tuning did not improve val loss)",
+  "n_train": 1535,
+  "params": 2260546,
+  "size_mb": 9.6,
+  "trained_on": "local CPU (Mac), same code and seed as Colab"
+}

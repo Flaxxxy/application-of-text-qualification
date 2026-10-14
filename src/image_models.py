@@ -169,13 +169,22 @@ def train_model(kind: str, X, y, Xv, yv, quick: bool = False) -> tuple[Any, dict
     elif kind == "mobilenetv2":
         core, backbone = build_mobilenetv2(size)
         trainer = _training_model(core, seed)
-        add(_fit(trainer, X, y, Xv, yv, ep(cfg["epochs_head"]), cfg["lr_head"], cfg["patience"],
-                 cfg["batch_size"]), "head")
+        h = _fit(trainer, X, y, Xv, yv, ep(cfg["epochs_head"]), cfg["lr_head"], cfg["patience"], cfg["batch_size"])
+        add(h, "head")
+        head_best, head_weights = min(h.history["val_loss"]), core.get_weights()
         backbone.trainable = True
         for layer in backbone.layers[:-cfg["finetune_layers"]]:
             layer.trainable = False
-        add(_fit(trainer, X, y, Xv, yv, ep(cfg["epochs_finetune"]), cfg["lr_finetune"], cfg["patience"],
-                 cfg["batch_size"]), "fine-tune")
+        h = _fit(trainer, X, y, Xv, yv, ep(cfg["epochs_finetune"]), cfg["lr_finetune"], cfg["patience"],
+                 cfg["batch_size"])
+        add(h, "fine-tune")
+        # Fine-tuning helps when the photos differ a lot from ImageNet, but on small mixed datasets
+        # it can overfit (we saw this for packages). Keep it only if it improved validation loss.
+        if min(h.history["val_loss"]) >= head_best:
+            core.set_weights(head_weights)
+            history["kept_stage"] = ["head (fine-tuning did not improve val loss)"]
+        else:
+            history["kept_stage"] = ["fine-tune"]
     else:
         raise ValueError(kind)
     return core, history
@@ -192,22 +201,26 @@ def tune_threshold(y_val: np.ndarray, p_val: np.ndarray, target_recall: float) -
     """Pick the decision threshold on the VALIDATION set.
 
     Business view: missing a damaged/rotten order (false negative) costs more than an extra
-    manual check (false positive). So we want recall of the bad class >= target_recall, and among
-    the thresholds that achieve it we take the highest one (fewest false alarms).
+    manual check (false positive), so the threshold must catch at least `target_recall` of the
+    bad class on validation. Among the thresholds that do, we take the one with the best F1 for
+    the bad class (ties -> the lower, safer threshold).
+    Why not simply "the highest threshold that still reaches the target": that value sits right
+    at the edge, so on new photos recall drops below the target (we saw 0.90 on validation become
+    0.87 on test for produce, while 0.5 would have given 0.95).
     If no threshold reaches the target, we take the one with the best F1 for the bad class.
     """
     from sklearn.metrics import f1_score, recall_score
 
-    candidates = np.unique(np.round(p_val, 4))
+    candidates = np.unique(np.concatenate([np.round(p_val, 4), [0.5]]))
+    f1 = {t: f1_score(y_val, p_val >= t, zero_division=0) for t in candidates}
     ok = [t for t in candidates if recall_score(y_val, p_val >= t, zero_division=0) >= target_recall]
-    if ok:
-        t = float(max(ok))
-        rule = f"highest threshold with val recall(bad) >= {target_recall}"
-    else:
-        t = float(max(candidates, key=lambda c: f1_score(y_val, p_val >= c, zero_division=0)))
-        rule = "best val F1(bad) (target recall not reachable)"
-    return {"threshold": round(t, 4), "rule": rule,
-            "val_recall_bad": round(float(recall_score(y_val, p_val >= t)), 4)}
+    pool = ok or list(candidates)
+    best = max(f1[t] for t in pool)
+    t = float(min(c for c in pool if f1[c] == best))
+    rule = (f"best val F1(bad) among thresholds with val recall(bad) >= {target_recall}" if ok
+            else "best val F1(bad) (target recall not reachable)")
+    return {"threshold": round(t, 4), "rule": rule, "val_recall_bad": round(float(recall_score(y_val, p_val >= t)), 4),
+            "val_f1_bad": round(float(f1[t]), 4)}
 
 
 def evaluate_image_model(domain: str, p_test: np.ndarray, y_test: np.ndarray, meta: pd.DataFrame,
@@ -237,8 +250,10 @@ def evaluate_image_model(domain: str, p_test: np.ndarray, y_test: np.ndarray, me
     return out
 
 
-def save_image_predictions(domain: str, name: str, meta: pd.DataFrame, y: np.ndarray, p_bad: np.ndarray) -> Path:
-    out = path("results", "predictions", create=True) / f"image_{domain}_{name}_test.csv"
+def save_image_predictions(domain: str, name: str, meta: pd.DataFrame, y: np.ndarray, p_bad: np.ndarray,
+                           split: str = "test") -> Path:
+    """P(bad) per image, saved so thresholds can be re-tuned later without the model."""
+    out = path("results", "predictions", create=True) / f"image_{domain}_{name}_{split}.csv"
     pd.DataFrame({"path": meta["path"], "source": meta["source"], "subtype": meta["subtype"],
                   "label": meta["label"], "is_bad": y, "p_bad": np.round(p_bad, 4)}).to_csv(out, index=False)
     return out
@@ -327,7 +342,7 @@ def plot_history(history: dict[str, list[float]], domain: str, name: str) -> Any
     for ax, metric in zip(axes, ["loss", "accuracy"]):
         ax.plot(epochs, history[metric], color="#2a78d6", linewidth=2, label="train")
         ax.plot(epochs, history[f"val_{metric}"], color="#eb6834", linewidth=2, label="validation")
-        if "fine-tune" in history.get("stage", []):
+        if "fine-tune" in history.get("stage", []):  # mark where stage 2 begins
             start = history["stage"].index("fine-tune") + 1
             ax.axvline(start - 0.5, color="#8a8984", linewidth=1, linestyle="--")
             ax.text(start - 0.4, ax.get_ylim()[1], " fine-tuning starts", va="top", fontsize=8, color="#52514e")
@@ -335,7 +350,9 @@ def plot_history(history: dict[str, list[float]], domain: str, name: str) -> Any
         ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
         ax.set_title(metric, loc="left")
         ax.legend()
-    fig.suptitle(f"{domain} · {name}: training curves", x=0.01, ha="left", fontsize=11, fontweight="bold")
+    kept = history.get("kept_stage", [""])[0]
+    note = f"  (kept: {kept})" if kept else ""
+    fig.suptitle(f"{domain} · {name}: training curves{note}", x=0.01, ha="left", fontsize=11, fontweight="bold")
     fig.tight_layout()
     save(fig, f"history_{domain}_{name}")
     return fig
@@ -385,15 +402,18 @@ def run_experiment(domain: str, kind: str, quick: bool = False, limit: int | Non
     from src.evaluate import plot_confusion_matrix
 
     X, y, _ = load_split(domain, "train", limit)
-    Xv, yv, _ = load_split(domain, "val", limit)
+    Xv, yv, mv = load_split(domain, "val", limit)
     Xt, yt, mt = load_split(domain, "test", limit)
     core, history = train_model(kind, X, y, Xv, yv, quick=quick)
 
-    tuned = tune_threshold(yv, predict_bad(core, Xv), load_config()["images"]["target_recall_bad"])
+    p_val = predict_bad(core, Xv)
+    save_image_predictions(domain, kind, mv, yv, p_val, split="val")
+    tuned = tune_threshold(yv, p_val, load_config()["images"]["target_recall_bad"])
     p_test = predict_bad(core, Xt)
     metrics = evaluate_image_model(domain, p_test, yt, mt, tuned["threshold"])
     metrics.update({"type": {"small_cnn": "CNN from scratch", "mobilenetv2": "MobileNetV2 transfer learning"}[kind],
                     "threshold_tuning": tuned, "epochs_run": len(history["loss"]),
+                    "kept_stage": history.get("kept_stage", ["scratch"])[0],
                     "n_train": int(len(y)), "params": int(core.count_params())})
 
     model_file = path("models_train", create=True) / f"image_{domain}_{kind}.keras"
@@ -410,4 +430,35 @@ def run_experiment(domain: str, kind: str, quick: bool = False, limit: int | Non
     bad = test["per_class"][class_names(domain)[1]]
     print(f"[done] {domain}/{kind}: accuracy {test['accuracy']:.3f}, macro-F1 {test['macro_f1']:.3f}, "
           f"recall(bad) {bad['recall']:.3f}, precision(bad) {bad['precision']:.3f}, threshold {tuned['threshold']}")
+    return metrics
+
+
+def reevaluate_saved(domain: str, kind: str) -> dict[str, Any]:
+    """Re-score a saved model (models/train/image_<domain>_<kind>.keras) without retraining.
+
+    Used after changing the threshold rule: predicts val + test again, re-tunes the threshold,
+    and rewrites the metrics file, keeping the training facts (epochs, size) from the original run.
+    """
+    import json
+
+    import keras
+
+    from src.evaluate import plot_confusion_matrix
+
+    core = keras.models.load_model(path("models_train") / f"image_{domain}_{kind}.keras")
+    Xv, yv, mv = load_split(domain, "val")
+    Xt, yt, mt = load_split(domain, "test")
+    p_val, p_test = predict_bad(core, Xv), predict_bad(core, Xt)
+    save_image_predictions(domain, kind, mv, yv, p_val, split="val")
+    save_image_predictions(domain, kind, mt, yt, p_test)
+    tuned = tune_threshold(yv, p_val, load_config()["images"]["target_recall_bad"])
+    f = path("results", "colab") / f"metrics_image_{domain}__{kind}.json"
+    old = json.loads(f.read_text())
+    metrics = evaluate_image_model(domain, p_test, yt, mt, tuned["threshold"])
+    metrics.update({k: old[k] for k in ("type", "epochs_run", "n_train", "params", "size_mb") if k in old})
+    metrics["threshold_tuning"] = tuned
+    f.write_text(json.dumps(metrics, indent=2))
+    plot_confusion_matrix(metrics["test"]["confusion_matrix"], metrics["test"]["labels"],
+                          f"{domain} · {kind}  (threshold {tuned['threshold']:.2f})", f"cm_image_{domain}_{kind}")
+    plot_grad_cam(core, Xt, yt, p_test, tuned["threshold"], domain, kind)
     return metrics

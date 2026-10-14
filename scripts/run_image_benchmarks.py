@@ -25,9 +25,11 @@ NAME = "bench_clip_zero_shot"
 def main(domains: list[str]) -> None:
     set_seed()
     for domain in domains:
-        Xv, yv, _ = load_split(domain, "val")
+        Xv, yv, mv = load_split(domain, "val")
         Xt, yt, mt = load_split(domain, "test")
-        tuned = tune_threshold(yv, clip_zero_shot(domain, Xv), load_config()["images"]["target_recall_bad"])
+        p_val = clip_zero_shot(domain, Xv)
+        save_image_predictions(domain, NAME, mv, yv, p_val, split="val")
+        tuned = tune_threshold(yv, p_val, load_config()["images"]["target_recall_bad"])
         p_test = clip_zero_shot(domain, Xt)
         metrics = evaluate_image_model(domain, p_test, yt, mt, tuned["threshold"])
         metrics.update({"type": "ready-made (zero-shot CLIP, no training)", "threshold_tuning": tuned,
