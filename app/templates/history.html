@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, pct %}
+{% block title %}History{% endblock %}
+{% block content %}
+<h1>History</h1>
+<p class="muted">The last {{ limit }} orders checked on this server (stored in SQLite; reset when the server is redeployed).</p>
+{% if rows %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Time (UTC)</th><th>From</th><th>Order</th><th>Status</th><th class="num">Risk</th><th>Sentiment</th><th>Photo</th><th>Review</th><th>Reasons</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="small">{{ r.created_at[:16] }}</td>
+        <td class="small">{{ r.source }}</td>
+        <td>{{ r.order_id }}<div class="muted small">{{ r.category }}</div></td>
+        <td>{{ status_badge(r.status) }}</td>
+        <td class="num">{{ "%.2f"|format(r.risk) }}</td>
+        <td>{{ r.sentiment }}</td>
+        <td>{% if r.has_photo %}{{ r.photo_result }} <span class="muted small">({{ pct(r.p_bad) }})</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+        <td class="review-cell small">{{ r.review_text|truncate(110) }}</td>
+        <td class="small">{{ r.reasons.split(" | ")[0] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card"><p class="muted" style="margin:0">Nothing checked yet. Try <a href="{{ url_for('check') }}">Check an order</a> or run the demo orders on the <a href="{{ url_for('batch') }}">Batch</a> page.</p></div>
+{% endif %}
+{% endblock %}

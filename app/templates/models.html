@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pct, num %}
+{% block title %}Models{% endblock %}
+{% macro fig(name, caption, width=None) -%}
+  {% if name in figures %}
+    <div class="figure"><img src="{{ url_for('figure', name=name ~ '.png') }}" alt="{{ caption }}" loading="lazy" {% if width %}style="max-width:{{ width }}px"{% endif %}></div>
+    <div class="caption">{{ caption }}</div>
+  {% endif %}
+{%- endmacro %}
+{% block content %}
+<h1>Models and results</h1>
+<p class="muted">Every number below comes from a real run on held-out test data (<code>results/metrics.json</code>).
+   Main metric: macro-F1 (the average F1 over classes, so rare classes count as much as common ones).</p>
+
+<section class="section">
+  <h2>1 · Review sentiment (negative / neutral / positive)</h2>
+  <p class="muted">6,751 test reviews from Amazon (electronics, grocery) and Flipkart. "External" = 75 short reviews from a
+     different source, positive vs negative only. Speed measured on a laptop CPU.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Model</th><th>Kind</th><th class="num">Test macro-F1</th><th class="num">F1 neutral</th><th class="num">External F1</th><th class="num">ms / review</th><th class="num">Size MB</th></tr></thead>
+      <tbody>
+      {% for r in t.text %}
+        <tr class="{{ 'highlight' if r.name == 'distilbert_finetuned' }}">
+          <td>{{ r.name }}{% if r.name == 'distilbert_finetuned' %} <span class="chip">used on this site</span>{% endif %}</td>
+          <td class="small">{{ r.type }}</td>
+          <td class="num">{{ num(r.f1) }}</td><td class="num">{{ num(r.neutral) }}</td><td class="num">{{ num(r.external) }}</td>
+          <td class="num">{{ num(r.ms, 2) }}</td><td class="num">{{ num(r.mb, 1) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if t.deploy.text_int8_test %}
+    <p class="small muted" style="margin-top:8px">On this site DistilBERT runs as an 8-bit ONNX model ({{ num(t.deploy.files_mb.get('text_distilbert.int8.onnx'), 1) }} MB):
+       test macro-F1 {{ num(t.deploy.text_int8_test.macro_f1, 4) }} vs {{ num(t.deploy.text_int8_test.pytorch_fp32_macro_f1, 4) }} for the original.</p>
+  {% endif %}
+  <div class="grid grid-2" style="margin-top:16px">
+    <div>{{ fig("text_model_comparison", "Test macro-F1 of every text model: ours, ready-made from the internet, and fine-tuned on our data.") }}</div>
+    <div>{{ fig("cm_text_distilbert_finetuned", "Confusion matrix of the deployed model: mistakes are almost always 'next door' (neutral).", 420) }}</div>
+  </div>
+  <div style="margin-top:16px">{{ fig("text_tfidf_top_words", "Explainability: the words that push TF-IDF + Logistic Regression towards each class.") }}</div>
+</section>
+
+<section class="section">
+  <h2>2 · Photo checks</h2>
+  <div class="grid grid-2">
+  {% for domain, d in t.images.items() %}
+    <div>
+      <h3>{{ domain }}: {{ d.bad }} vs {{ 'intact' if domain == 'packages' else 'fresh' }}</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Model</th><th class="num">Macro-F1</th><th class="num">Recall {{ d.bad }}</th><th class="num">Precision {{ d.bad }}</th></tr></thead>
+          <tbody>
+          {% for r in d.rows %}
+            <tr class="{{ 'highlight' if r.name == 'mobilenetv2' }}">
+              <td>{{ r.name }}{% if r.name == 'mobilenetv2' %} <span class="chip">used</span>{% endif %}<div class="muted small">{{ r.type }}</div></td>
+              <td class="num">{{ num(r.f1) }}</td><td class="num">{{ num(r.recall) }}</td><td class="num">{{ num(r.precision) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% set used = d.rows|selectattr("name", "equalto", "mobilenetv2")|list %}
+      {% if used %}
+        <p class="small muted" style="margin-top:8px">MobileNetV2 per {{ 'source' if domain == 'packages' else 'fruit' }}:
+          {% for g, v in used[0].groups.items() %}{{ g.replace('packages_', '') }} {{ num(v.macro_f1, 2) }}{{ ', ' if not loop.last }}{% endfor %}.
+          Threshold tuned on validation to catch ≥ 90% of {{ d.bad }} photos.</p>
+      {% endif %}
+      {{ fig("gradcam_" ~ domain ~ "_mobilenetv2", "Grad-CAM: the regions that made the model say '" ~ d.bad ~ "'.") }}
+    </div>
+  {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <h2>3 · Combining review and photo</h2>
+  {% if t.fusion %}
+  <p class="muted">{{ t.fusion.n_test }} simulated test orders ({{ pct(t.fusion.problematic_share_test) }} problematic). Each order pairs a
+     test review with a test photo from a different customer, so the numbers show how the logic behaves, not real shop data.
+     Weights: text {{ t.fusion.tuned_settings.weights.text }}, photo {{ t.fusion.tuned_settings.weights.image }}, tags {{ t.fusion.tuned_settings.weights.tag }}.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Strategy for flagging an order</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">Orders flagged</th></tr></thead>
+      <tbody>
+      {% for name, v in t.fusion.comparison_test.items() %}
+        <tr class="{{ 'highlight' if 'ours' in name }}"><td>{{ name }}</td><td class="num">{{ num(v.precision, 2) }}</td><td class="num">{{ num(v.recall, 2) }}</td>
+            <td class="num">{{ num(v.f1, 2) }}</td><td class="num">{{ pct(v.flag_rate) }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <div style="margin-top:16px">{{ fig("fusion_strategy_comparison", "The rules for when review and photo disagree are what lift recall from ~0.6 to 0.9.") }}</div>
+</section>
+
+<section class="section">
+  <h2>Limitations</h2>
+  <div class="card">
+    <ul style="margin:0;padding-left:20px">
+      <li>Sentiment labels come from star ratings, which are noisy (e.g. "very bad" rated 3 stars).</li>
+      <li>Orders that combine a review and a photo are simulated; real customer photos may look different from the training photos.</li>
+      <li>Package photos mix real cardboard photos, product shots and 3D renders; the model is weakest on the renders.</li>
+      <li>The produce model knows apples, bananas and oranges only.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

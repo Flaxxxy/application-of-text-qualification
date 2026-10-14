@@ -181,3 +181,16 @@ Packages MobileNetV2 per source: BoxCondition 0.894, Roboflow 0.800, Kaggle rend
 | **combined, score + rules (ours)** | 0.846 | **0.902** | **0.873** |
 
 **Hosting research (for Phase 8):** Render free (512 MB, 0.1 CPU, sleeps); Render Starter $7/month (0.5 CPU, no sleep); GitHub Student Developer Pack gives Heroku $13/month credit for 24 months (needs student verification); Azure for Students $100. Suggested to Denis: apply for the Student Pack now.
+
+## Phase 7 — Flask app (2026-10-14, checkpoint)
+
+**Done**
+- `app/app.py` (Home, Check an order, Batch, History, Models, /health, figure + demo-file routes, friendly 404/413/500), `app/db.py` (SQLite log), Jinja templates, `app/static/styles.css` (light/dark tokens; status = symbol + word + colour), tiny vanilla JS for the batch status filter. `python -m app` starts it locally.
+- `src/batch.py`: CSV/ZIP/folder reading with validation (columns, categories, ≥ 3 words, ≤ 100 rows, duplicate ids, image check, ZIP read in memory only), shared by the app and `scripts/flag.py` (CLI for one order or a CSV).
+- Check page: "Try an example" links prefill demo orders incl. their photo; result shows decision + risk meter + reasons, sentiment bars, highlighted trigger phrases, photo with P(bad) vs threshold.
+- `scripts/check_memory.py`; `tests/test_app.py` (16 tests). Total: 90 tests pass.
+- `requirements-app.txt` pinned; tested in a brand-new venv with only those packages: app works, no torch/tensorflow/pandas loaded.
+- Fusion: "no photo" reason moved to the end so the main reason is the substantive one; demo data and notebook 07 regenerated.
+- README quick start + `docs/screenshots/`.
+
+**Numbers (Mac, gunicorn 1 worker):** start-up 0.9 s / 251 MB; **peak 281 MB** (during the 12-order batch; target < 450 MB); one order with photo 0.05 s; 12 demo orders 0.25 s.

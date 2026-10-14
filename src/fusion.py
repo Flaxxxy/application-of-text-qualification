@@ -89,8 +89,6 @@ def fuse(text_probs: dict[str, float], tags: dict[str, str] | list[str], categor
     status = "URGENT" if risk >= th["urgent"] else "REVIEW" if risk >= th["review"] else "OK"
 
     reasons: list[dict[str, str]] = []
-    if image is None:
-        reasons.append(_reason("NO_PHOTO"))
     if text_label == "negative" or p_neg >= th["review"]:
         reasons.append(_reason("NEGATIVE_TEXT", p_neg=p_neg))
     if tags:
@@ -121,8 +119,10 @@ def fuse(text_probs: dict[str, float], tags: dict[str, str] | list[str], categor
             status = "REVIEW"
             reasons.insert(0, _reason("ISSUE_NOT_VISUAL", good_label=good_label))
 
-    if status == "OK" and all(r["code"] == "NO_PHOTO" for r in reasons):
+    if status == "OK" and not reasons:
         reasons.append(_reason("LOOKS_FINE"))
+    if image is None:
+        reasons.append(_reason("NO_PHOTO"))  # last: the main reason should be what was found
     return Decision(status=status, risk=round(float(risk), 4), reasons=reasons, used_photo=image is not None,
                     details={"text_label": text_label, "p_negative": round(p_neg, 4), "tags": tags,
                              "image": image, "category": category})

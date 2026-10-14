@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, pct %}
+{% block title %}Check an order{% endblock %}
+{% block content %}
+<h1>Check an order</h1>
+<p class="muted">Paste a customer review, pick the product category and (optionally) add the customer's photo.</p>
+
+<div class="grid grid-2">
+  <div>
+    <form class="card" method="post" enctype="multipart/form-data" action="{{ url_for('check') }}">
+      {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+      <div class="field">
+        <label for="review_text">Review text</label>
+        <textarea id="review_text" name="review_text" required placeholder="e.g. The box arrived crushed and the mug inside was broken. I want a refund.">{{ form.review_text }}</textarea>
+      </div>
+      <div class="field">
+        <label for="category">Product category</label>
+        <select id="category" name="category">
+          {% for c in categories %}
+            <option value="{{ c }}" {{ 'selected' if form.category == c }}>{{ c }}{% if c in routing %} — photo checked for {{ "package damage" if routing[c] == "packages" else "rot" }}{% else %} — photo checked for package damage{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="photo">Customer photo <span class="hint">optional · JPG, PNG or WEBP, max 10 MB</span></label>
+        <input id="photo" type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+        {% if form.demo %}
+          <p class="hint" style="margin:6px 0 0">Using the photo of demo order {{ form.demo }} unless you choose another file.</p>
+          <input type="hidden" name="demo" value="{{ form.demo }}">
+        {% endif %}
+      </div>
+      <button class="btn btn-primary" type="submit">Check order</button>
+    </form>
+    <div class="card">
+      <h3>Try an example</h3>
+      <p class="muted small">Demo orders (simulated: review and photo come from different customers).</p>
+      <div class="examples">
+        {% for d in demos %}<a href="{{ url_for('check', demo=d.order_id) }}" title="{{ d.shows }}">{{ d.order_id }} · {{ d.shows.split(' -> ')[0] }}</a>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div>
+    {% if result %}
+      {% set r = result.row %}
+      <div class="card" aria-live="polite">
+        <div class="result-head">
+          <h2 style="margin:0">Decision</h2>
+          {{ status_badge(r.status, true) }}
+        </div>
+        <div style="margin:14px 0 6px" class="small muted">Risk score {{ "%.2f"|format(r.risk) }} (REVIEW from 0.40, URGENT from 0.70)</div>
+        <div class="meter" role="img" aria-label="risk {{ '%.2f'|format(r.risk) }}">
+          <span style="width:{{ (r.risk * 100)|round(1) }}%;background:var(--{{ 'urgent' if r.status == 'URGENT' else 'review-fill' if r.status == 'REVIEW' else 'ok' }})"></span>
+          <i class="mark" style="left:40%"></i><i class="mark" style="left:70%"></i>
+        </div>
+        <h3 style="margin-top:18px">Why</h3>
+        <ul class="reasons">{% for reason in result.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+      </div>
+
+      <div class="card">
+        <h3>Review: sentiment {{ r.sentiment }}</h3>
+        <div class="bars">
+          {% for label, p in result.probs.items() %}
+            <div class="bar-row">
+              <span>{{ label }}</span>
+              <div class="meter"><span style="width:{{ (p * 100)|round(1) }}%;background:var(--{{ label[:3] }})"></span></div>
+              <span class="val">{{ pct(p) }}</span>
+            </div>
+          {% endfor %}
+        </div>
+        <p style="margin:16px 0 8px">
+          {% for text, tag in result.pieces %}{% if tag %}<mark title="{{ tag.replace('_', ' ') }}">{{ text }}</mark>{% else %}{{ text }}{% endif %}{% endfor %}
+        </p>
+        {% if result.tags %}
+          <div>{% for tag in result.tags %}<span class="chip chip-tag">{{ tag.replace("_", " ") }}</span>{% endfor %}</div>
+        {% else %}
+          <p class="muted small" style="margin:0">No issue tags found.</p>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Photo</h3>
+        {% if r.has_photo %}
+          <img class="photo" src="{{ photo_uri }}" alt="customer photo">
+          <p style="margin-bottom:8px">{{ r.photo_model }} model says <b>{{ r.photo_result }}</b>
+             (P(bad) = {{ pct(r.p_bad, 1) }}; flagged from {{ pct(result.photo_threshold, 0) }})</p>
+          <div class="meter" role="img" aria-label="probability of damage or rot">
+            <span style="width:{{ (r.p_bad * 100)|round(1) }}%;background:var(--{{ 'urgent' if r.p_bad >= result.photo_threshold else 'ok' }})"></span>
+            <i class="mark" style="left:{{ (result.photo_threshold * 100)|round(1) }}%"></i>
+          </div>
+        {% else %}
+          <p class="muted" style="margin:0">No photo: the decision is based on the text only.</p>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="card">
+        <h3>What you'll see</h3>
+        <p class="muted">The decision with its reasons, the review's sentiment with the phrases that triggered each issue
+           tag, and the photo model's verdict.</p>
+        <p class="muted" style="margin:0">Tip: pick an example on the left to fill the form, then press <b>Check order</b>.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

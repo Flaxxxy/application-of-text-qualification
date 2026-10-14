@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Review Flagging{% endblock %} · Retail Review Flagging</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232a78d6'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='Arial'>!</text></svg>">
+</head>
+<body>
+  {% set nav = [("home", "Home"), ("check", "Check an order"), ("batch", "Batch"), ("history", "History"), ("models", "Models")] %}
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="{{ url_for('home') }}"><span class="brand-mark">!</span> Retail Review Flagging</a>
+      <nav class="nav" aria-label="Main">
+        {% for endpoint, label in nav %}
+          <a href="{{ url_for(endpoint) }}" class="{{ 'active' if request.endpoint == endpoint }}">{{ label }}</a>
+        {% endfor %}
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="wrap">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+  <footer>
+    <div class="wrap">
+      Course project · AI in Accounting &amp; Finance (NTU). Text model: fine-tuned DistilBERT · photo models: MobileNetV2 ·
+      all running as ONNX on a small CPU server. Results come from real test runs; demo orders are simulated.
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,12 @@
+{% macro status_badge(status, large=false) -%}
+  {%- set sym = {"OK": "✓", "REVIEW": "!", "URGENT": "‼"}[status] -%}
+  <span class="badge badge-{{ status }}{{ ' badge-lg' if large }}"><span aria-hidden="true">{{ sym }}</span> {{ status }}</span>
+{%- endmacro %}
+
+{% macro pct(x, digits=0) -%}
+  {%- if x is none or x == "" -%}–{%- else -%}{{ "%.*f"|format(digits, x * 100) }}%{%- endif -%}
+{%- endmacro %}
+
+{% macro num(x, digits=3) -%}
+  {%- if x is none or x == "" -%}–{%- else -%}{{ "%.*f"|format(digits, x) }}{%- endif -%}
+{%- endmacro %}

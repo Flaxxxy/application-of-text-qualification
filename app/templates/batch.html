@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, pct %}
+{% block title %}Batch{% endblock %}
+{% block content %}
+<h1>Check many orders</h1>
+<p class="muted">Upload a CSV with the columns <code>order_id, category, review_text</code> (max {{ max_rows }} rows) and,
+   optionally, a ZIP of photos named by order id (e.g. <code>A-1001.jpg</code>).</p>
+
+<div class="grid grid-2">
+  <form class="card" method="post" enctype="multipart/form-data" action="{{ url_for('batch') }}">
+    {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+    <div class="field">
+      <label for="orders">Orders CSV</label>
+      <input id="orders" type="file" name="orders" accept=".csv,text/csv">
+    </div>
+    <div class="field">
+      <label for="photos">Photos ZIP <span class="hint">optional · max 30 MB in total</span></label>
+      <input id="photos" type="file" name="photos" accept=".zip,application/zip">
+    </div>
+    <button class="btn btn-primary" name="action" value="upload">Check orders</button>
+  </form>
+  <div class="card">
+    <h3>No file at hand?</h3>
+    <p class="muted">Run the 12 demo orders, which show every rule, or download them as a template.</p>
+    <div class="actions">
+      <form method="post" action="{{ url_for('batch') }}"><button class="btn btn-primary" name="action" value="demo">Run the 12 demo orders</button></form>
+      <a class="btn btn-ghost" href="{{ url_for('demo_file', name='orders.csv') }}">Example CSV</a>
+      <a class="btn btn-ghost" href="{{ url_for('demo_file', name='photos.zip') }}">Example photos ZIP</a>
+    </div>
+  </div>
+</div>
+
+{% if rows %}
+<section class="section">
+  <div class="result-head">
+    <h2 style="margin:0">{{ rows|length }} orders checked{% if source == "demo" %} (demo orders, simulated){% endif %}</h2>
+    <a class="btn btn-ghost" href="{{ csv_uri }}" download="flagged_orders.csv">Download results CSV</a>
+  </div>
+  <div class="filters" role="group" aria-label="Filter by status">
+    <button type="button" data-filter="all" aria-pressed="true">All {{ rows|length }}</button>
+    {% for s, n in counts.items() %}<button type="button" data-filter="{{ s }}" aria-pressed="false">{{ s }} {{ n }}</button>{% endfor %}
+  </div>
+  <div class="table-wrap">
+    <table id="results">
+      <thead><tr><th>Order</th><th>Status</th><th>Review</th><th>Sentiment</th><th>Issue tags</th><th>Photo</th><th>Main reason</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr data-status="{{ r.status }}">
+          <td>{{ r.order_id }}<div class="muted small">{{ r.category }}</div></td>
+          <td>{{ status_badge(r.status) }}</td>
+          <td class="review-cell">{{ r.review_text|truncate(140) }}</td>
+          <td>{{ r.sentiment }}<div class="muted small">neg {{ pct(r.p_negative) }}</div></td>
+          <td>{% for t in r.tags.split(", ") if t %}<span class="chip chip-tag">{{ t.replace("_", " ") }}</span>{% else %}<span class="muted">–</span>{% endfor %}</td>
+          <td>{% if r.has_photo %}{{ r.photo_result }}<div class="muted small">P(bad) {{ pct(r.p_bad) }}</div>{% else %}<span class="muted">no photo</span>{% endif %}</td>
+          <td>{{ r.main_reason }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  // Show only the rows with the chosen status (no page reload, no framework).
+  document.querySelectorAll(".filters button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var f = btn.dataset.filter;
+      document.querySelectorAll(".filters button").forEach(function (b) { b.setAttribute("aria-pressed", b === btn); });
+      document.querySelectorAll("#results tbody tr").forEach(function (tr) {
+        tr.hidden = f !== "all" && tr.dataset.status !== f;
+      });
+    });
+  });
+</script>
+{% endblock %}

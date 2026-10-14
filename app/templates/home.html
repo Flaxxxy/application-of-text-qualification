@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, pct, num %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>Find problematic orders from what customers write <em>and</em> show</h1>
+    <p>An online shop gets thousands of reviews a day, many with a photo. This tool reads each review, checks the
+       photo for a damaged package or spoiled food, and combines both into one decision a support agent can act on,
+       with the reasons spelled out.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="{{ url_for('check') }}">Check an order</a>
+      <form method="post" action="{{ url_for('batch') }}">
+        <button class="btn btn-ghost" name="action" value="demo">Run the 12 demo orders</button>
+      </form>
+    </div>
+  </div>
+  <div class="card">
+    <h3>What the decision means</h3>
+    <p>{{ status_badge("OK") }} &nbsp;nothing to do</p>
+    <p>{{ status_badge("REVIEW") }} &nbsp;a person should look: e.g. the photo contradicts the review, or a damage claim isn't visible</p>
+    <p style="margin:0">{{ status_badge("URGENT") }} &nbsp;the review and the photo both show a problem</p>
+  </div>
+</section>
+
+<section class="section">
+  <h2>How it works</h2>
+  <div class="flow">
+    <div class="step"><b>1 · Review text</b><span class="muted small">Sentiment (negative / neutral / positive) with fine-tuned DistilBERT, plus issue tags such as "damaged packaging" or "refund request".</span></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><b>2 · Customer photo</b><span class="muted small">Electronics → package model (damaged vs intact). Grocery → produce model (rotten vs fresh). Both MobileNetV2.</span></div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="step"><b>3 · Fusion</b><span class="muted small">A weighted risk score plus rules for when text and photo agree or disagree → OK / REVIEW / URGENT with reasons.</span></div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>How well it works</h2>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="stat">{{ num(stats.text_f1, 2) }}</div>
+      <div class="stat-label">macro-F1 of the review sentiment model on 6,751 test reviews (3 classes)</div>
+    </div>
+    <div class="card">
+      <div class="stat">{{ num(stats.packages_f1, 2) }} · {{ num(stats.produce_f1, 2) }}</div>
+      <div class="stat-label">macro-F1 of the photo models on test photos: damaged packages · rotten produce</div>
+    </div>
+    <div class="card">
+      {% set ours = stats.fusion.get("combined: score + rules (ours)", {}) %}
+      {% set text_only = stats.fusion.get("text only (review negative)", {}) %}
+      <div class="stat">{{ pct(ours.get("recall")) }}</div>
+      <div class="stat-label">of problematic orders caught by combining review and photo, vs {{ pct(text_only.get("recall")) }} from the review alone (simulated orders)</div>
+    </div>
+  </div>
+  <p class="muted small" style="margin-top:12px">All numbers come from real test runs. Details on the <a href="{{ url_for('models') }}">Models</a> page.</p>
+</section>
+{% endblock %}

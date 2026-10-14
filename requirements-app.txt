@@ -1,10 +1,11 @@
-# Slim requirements for the website on Render (512 MB RAM).
+# Slim, pinned requirements for the website (Render / Heroku, 512 MB RAM) and scripts/flag.py.
 # No torch / tensorflow / transformers: all models run through onnxruntime.
-flask
-gunicorn
-onnxruntime
-tokenizers
-numpy
-Pillow
-pyyaml
-python-dotenv
+# Python 3.11 (versions tested together on 2026-10-14).
+flask==3.1.3
+gunicorn==26.2.0
+onnxruntime==1.31.0
+tokenizers==0.23.3
+numpy==2.4.6
+pillow==12.3.0
+pyyaml==6.0.3
+python-dotenv==1.2.4

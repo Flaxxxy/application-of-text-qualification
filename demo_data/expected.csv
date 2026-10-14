@@ -8,6 +8,6 @@ DEMO-06,REVIEW,0.5609,negative,spoiled_food,0.0,"Review claims spoiled food, but
 DEMO-07,REVIEW,0.5921,negative,defective_product,0.0079,"Negative review, photo looks intact: a service or product problem a photo can't show. | Review is negative (P = 96%). | Review mentions: defective product.","stopped working, box fine -> REVIEW (problem a photo can't show)"
 DEMO-08,OK,0.0044,positive,,0.0088,No problem found.,"happy customer, intact box -> OK"
 DEMO-09,OK,0.001,positive,,0.0,No problem found.,"happy customer, fresh fruit -> OK"
-DEMO-10,URGENT,0.9755,negative,refund_request,,No photo: decision based on the text only. | Review is negative (P = 95%). | Review mentions: refund request.,"angry review, no photo -> text-only decision"
-DEMO-11,OK,0.0022,positive,,,No photo: decision based on the text only. | No problem found.,"happy review, no photo -> OK (text only)"
+DEMO-10,URGENT,0.9755,negative,refund_request,,Review is negative (P = 95%). | Review mentions: refund request. | No photo: decision based on the text only.,"angry review, no photo -> text-only decision"
+DEMO-11,OK,0.0022,positive,,,No problem found. | No photo: decision based on the text only.,"happy review, no photo -> OK (text only)"
 DEMO-12,REVIEW,0.4107,neutral,,1.0,Photo shows rot (P = 100%).,"neutral review, rotten photo -> REVIEW"
