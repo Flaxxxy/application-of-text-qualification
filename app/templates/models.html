@@ -1,93 +1,87 @@
 {% extends "base.html" %}
-{% from "_macros.html" import pct, num, bar %}
+{% from "_macros.html" import pct, num %}
 {% block title %}Models & results{% endblock %}
-{% block pretitle %}Evaluation on held-out test data{% endblock %}
 {% block heading %}Models &amp; results{% endblock %}
+{% block subheading %}Every number comes from a real run on held-out test data{% endblock %}
 {% macro fig(name, caption) -%}
   {% if name in figures %}
     <figure class="mb-0">
       <img class="figure-img" src="{{ url_for('figure', name=name ~ '.png') }}" alt="{{ caption }}" loading="lazy">
-      <figcaption class="text-secondary small mt-2">{{ caption }}</figcaption>
+      <figcaption class="small text-body-secondary mt-2">{{ caption }}</figcaption>
     </figure>
   {% endif %}
 {%- endmacro %}
 {% macro group_badge(group) -%}
-  {%- set c = {"ours": "blue", "ready-made": "orange", "fine-tuned": "green"}[group] -%}
-  <span class="badge bg-{{ c }}-lt">{{ group }}</span>
+  {%- set c = {"ours": "primary", "ready-made": "warning", "fine-tuned": "success"}[group] -%}
+  <span class="badge text-bg-{{ c }}-subtle text-{{ c }}-emphasis border border-{{ c }}-subtle">{{ group }}</span>
 {%- endmacro %}
 {% block content %}
 <div class="card">
   <div class="card-header">
-    <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
-      <li class="nav-item" role="presentation"><a href="#tab-text" class="nav-link active" data-bs-toggle="tab" role="tab"><i class="ti ti-message-2 me-2"></i>Review sentiment</a></li>
-      <li class="nav-item" role="presentation"><a href="#tab-images" class="nav-link" data-bs-toggle="tab" role="tab"><i class="ti ti-photo me-2"></i>Photo checks</a></li>
-      <li class="nav-item" role="presentation"><a href="#tab-fusion" class="nav-link" data-bs-toggle="tab" role="tab"><i class="ti ti-chart-dots-3 me-2"></i>Combined</a></li>
-      <li class="nav-item" role="presentation"><a href="#tab-limits" class="nav-link" data-bs-toggle="tab" role="tab"><i class="ti ti-info-circle me-2"></i>Limitations</a></li>
+    <ul class="nav nav-underline-border card-header-tabs" role="tablist">
+      <li class="nav-item" role="presentation"><button class="nav-link active" data-coreui-toggle="tab" data-coreui-target="#tab-text" type="button" role="tab"><i class="cil-speech me-2"></i>Review sentiment</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" data-coreui-toggle="tab" data-coreui-target="#tab-images" type="button" role="tab"><i class="cil-camera me-2"></i>Photo checks</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" data-coreui-toggle="tab" data-coreui-target="#tab-fusion" type="button" role="tab"><i class="cil-balance-scale me-2"></i>Combined</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" data-coreui-toggle="tab" data-coreui-target="#tab-limits" type="button" role="tab"><i class="cil-info me-2"></i>Limitations</button></li>
     </ul>
   </div>
   <div class="card-body">
     <div class="tab-content">
 
       <!-- TEXT -->
-      <div class="tab-pane active show" id="tab-text" role="tabpanel">
-        <p class="text-secondary">Negative / neutral / positive on <strong>6,751 test reviews</strong> (Amazon electronics &amp; grocery, Flipkart).
-          Main metric: <strong>macro-F1</strong>, the average F1 over the three classes. "External" = 75 short reviews from another
-          source, positive vs negative only. Speed on a laptop CPU.</p>
-        <div class="table-responsive border rounded mb-3">
-          <table class="table table-vcenter card-table mb-0">
-            <thead><tr><th>Model</th><th>Group</th><th style="width:22%">Test macro-F1</th><th class="text-end">F1 neutral</th><th class="text-end">External F1</th><th class="text-end">ms / review</th><th class="text-end">Size MB</th></tr></thead>
+      <div class="tab-pane fade show active" id="tab-text" role="tabpanel">
+        <div class="row g-4">
+          <div class="col-xl-7">
+            <p class="text-body-secondary">Negative / neutral / positive on <strong>6,751 test reviews</strong>. Macro-F1 = the average F1 over the three
+              classes. <span class="text-body">Blue</span>: ours · <span class="text-body">orange</span>: ready-made from Hugging Face ·
+              <span class="text-body">green</span>: fine-tuned on our reviews. Hover a bar for details.</p>
+            <div class="chart-box" style="height: 380px"><canvas id="chart-text"></canvas></div>
+          </div>
+          <div class="col-xl-5">
+            {{ fig("cm_text_distilbert_finetuned", "Deployed model: mistakes are almost always 'next door' (via neutral).") }}
+          </div>
+        </div>
+        {% if t.deploy.text_int8_test %}
+          <div class="callout callout-info mt-4 mb-4">
+            <i class="cil-bolt me-1"></i>On this site DistilBERT runs as an <strong>8-bit ONNX</strong> model
+            ({{ num(t.deploy.files_mb.get('text_distilbert.int8.onnx'), 1) }} MB instead of 268 MB): test macro-F1
+            <strong>{{ num(t.deploy.text_int8_test.macro_f1, 4) }}</strong> vs {{ num(t.deploy.text_int8_test.pytorch_fp32_macro_f1, 4) }} for the original.
+          </div>
+        {% endif %}
+        <div class="table-responsive border rounded mb-4">
+          <table class="table table-hover mb-0">
+            <thead class="fw-semibold text-nowrap"><tr>
+              <th class="bg-body-secondary">Model</th><th class="bg-body-secondary">Group</th><th class="bg-body-secondary text-end">Test macro-F1</th>
+              <th class="bg-body-secondary text-end">F1 neutral</th><th class="bg-body-secondary text-end">External F1</th>
+              <th class="bg-body-secondary text-end">ms / review</th><th class="bg-body-secondary text-end">Size MB</th></tr></thead>
             <tbody>
             {% for r in t.text %}
-              <tr class="{{ 'table-active' if r.name == 'distilbert_finetuned' }}">
-                <td><div class="fw-bold">{{ r.name }}</div><div class="text-secondary small">{{ r.type }}</div></td>
-                <td>{{ group_badge(r.group) }}{% if r.name == 'distilbert_finetuned' %} <span class="badge bg-primary text-primary-fg ms-1"><i class="ti ti-check me-1"></i>on this site</span>{% endif %}</td>
-                <td><div class="d-flex align-items-center gap-2"><span class="fw-bold" style="width:3.2rem">{{ num(r.f1) }}</span><div class="flex-fill">{{ bar(r.f1, {"ours": "blue", "ready-made": "orange", "fine-tuned": "green"}[r.group], height="progress-sm") }}</div></div></td>
-                <td class="text-end">{{ num(r.neutral) }}</td><td class="text-end">{{ num(r.external) }}</td>
+              <tr class="align-middle {{ 'table-primary' if r.name == 'distilbert_finetuned' }}">
+                <td><div class="fw-semibold">{{ r.name }}{% if r.name == 'distilbert_finetuned' %} <span class="badge text-bg-primary ms-1">on this site</span>{% endif %}</div><div class="small text-body-secondary">{{ r.type }}</div></td>
+                <td>{{ group_badge(r.group) }}</td>
+                <td class="text-end fw-semibold">{{ num(r.f1) }}</td><td class="text-end">{{ num(r.neutral) }}</td><td class="text-end">{{ num(r.external) }}</td>
                 <td class="text-end">{{ num(r.ms, 2) }}</td><td class="text-end">{{ num(r.mb, 1) }}</td>
               </tr>
             {% endfor %}
             </tbody>
           </table>
         </div>
-        {% if t.deploy.text_int8_test %}
-          <div class="alert alert-info mb-3"><div class="d-flex gap-2"><i class="ti ti-cpu"></i><div>
-            On this site DistilBERT runs as an <strong>8-bit ONNX</strong> model ({{ num(t.deploy.files_mb.get('text_distilbert.int8.onnx'), 1) }} MB instead of 268 MB):
-            test macro-F1 <strong>{{ num(t.deploy.text_int8_test.macro_f1, 4) }}</strong> vs {{ num(t.deploy.text_int8_test.pytorch_fp32_macro_f1, 4) }} for the original.</div></div></div>
-        {% endif %}
-        <div class="row g-3">
-          <div class="col-lg-7">{{ fig("text_model_comparison", "Ours (blue), ready-made from Hugging Face (orange), fine-tuned on our reviews (green).") }}</div>
-          <div class="col-lg-5">{{ fig("cm_text_distilbert_finetuned", "Deployed model: mistakes are almost always 'next door' (via neutral).") }}</div>
-          <div class="col-12">{{ fig("text_tfidf_top_words", "Explainability: the words that push TF-IDF + Logistic Regression towards each class. Kept negations ('not good') matter.") }}</div>
-        </div>
+        {{ fig("text_tfidf_top_words", "Explainability: the words that push TF-IDF + Logistic Regression towards each class. The negations we kept ('not good', 'not worth') matter.") }}
       </div>
 
       <!-- IMAGES -->
-      <div class="tab-pane" id="tab-images" role="tabpanel">
+      <div class="tab-pane fade" id="tab-images" role="tabpanel">
         <div class="row g-4">
         {% for domain, d in t.images.items() %}
-          <div class="col-lg-6">
-            <h3 class="mb-1"><i class="ti ti-{{ 'package' if domain == 'packages' else 'apple' }} me-2"></i>{{ domain|capitalize }}: {{ d.bad }} vs {{ 'intact' if domain == 'packages' else 'fresh' }}</h3>
-            <p class="text-secondary small">Threshold tuned on validation to catch ≥ 90% of {{ d.bad }} photos.</p>
-            <div class="table-responsive border rounded mb-2">
-              <table class="table table-vcenter card-table mb-0">
-                <thead><tr><th>Model</th><th style="width:30%">Macro-F1</th><th class="text-end">Recall {{ d.bad }}</th><th class="text-end">Precision</th></tr></thead>
-                <tbody>
-                {% for r in d.rows %}
-                  {% set g = "ready-made" if r.name.startswith("bench_") else "fine-tuned" if r.name == "mobilenetv2" else "ours" %}
-                  <tr class="{{ 'table-active' if r.name == 'mobilenetv2' }}">
-                    <td><div class="fw-bold">{{ r.name }}{% if r.name == 'mobilenetv2' %} <span class="badge bg-primary text-primary-fg ms-1">used</span>{% endif %}</div><div class="text-secondary small">{{ r.type }}</div></td>
-                    <td><div class="d-flex align-items-center gap-2"><span class="fw-bold" style="width:3.2rem">{{ num(r.f1) }}</span><div class="flex-fill">{{ bar(r.f1, {"ours": "blue", "ready-made": "orange", "fine-tuned": "green"}[g], height="progress-sm") }}</div></div></td>
-                    <td class="text-end">{{ num(r.recall) }}</td><td class="text-end">{{ num(r.precision) }}</td>
-                  </tr>
-                {% endfor %}
-                </tbody>
-              </table>
-            </div>
+          <div class="col-xl-6">
+            <h5 class="mb-1"><i class="cil-{{ 'inbox' if domain == 'packages' else 'apple' }} me-2"></i>{{ domain|capitalize }}: {{ d.bad }} vs {{ 'intact' if domain == 'packages' else 'fresh' }}</h5>
+            <p class="small text-body-secondary">Test photos. Threshold tuned on validation to catch ≥ 90% of {{ d.bad }} photos.</p>
+            <div class="chart-box mb-3" style="height: 210px"><canvas id="chart-{{ domain }}"></canvas></div>
             {% set used = d.rows|selectattr("name", "equalto", "mobilenetv2")|list %}
             {% if used %}
-              <div class="d-flex flex-wrap gap-1 mb-3">
-                <span class="text-secondary small me-1">MobileNetV2 per {{ 'source' if domain == 'packages' else 'fruit' }}:</span>
-                {% for g, v in used[0].groups.items() %}<span class="badge bg-secondary-lt">{{ g.replace('packages_', '') }} {{ num(v.macro_f1, 2) }}</span>{% endfor %}
+              <div class="d-flex flex-wrap gap-1 align-items-center mb-3">
+                <span class="small text-body-secondary me-1">MobileNetV2 per {{ 'source' if domain == 'packages' else 'fruit' }}:</span>
+                {% for g, v in used[0].groups.items() %}<span class="badge text-bg-light border">{{ g.replace('packages_', '') }} {{ num(v.macro_f1, 2) }}</span>{% endfor %}
               </div>
             {% endif %}
             {{ fig("gradcam_" ~ domain ~ "_mobilenetv2", "Grad-CAM: the regions that made the model say '" ~ d.bad ~ "'.") }}
@@ -97,38 +91,28 @@
       </div>
 
       <!-- FUSION -->
-      <div class="tab-pane" id="tab-fusion" role="tabpanel">
+      <div class="tab-pane fade" id="tab-fusion" role="tabpanel">
         {% if t.fusion %}
-        <div class="alert alert-warning mb-3"><div class="d-flex gap-2"><i class="ti ti-alert-triangle"></i><div>
-          <strong>Simulated orders.</strong> {{ t.fusion.n_test }} test orders, each pairing a test review with a test photo from a different
-          customer ({{ pct(t.fusion.problematic_share_test) }} problematic). They show how the decision logic behaves, not real shop data.</div></div></div>
-        <div class="table-responsive border rounded mb-3">
-          <table class="table table-vcenter card-table mb-0">
-            <thead><tr><th>How an order gets flagged</th><th class="text-end">Precision</th><th style="width:28%">Recall (problem orders caught)</th><th class="text-end">F1</th><th class="text-end">Orders flagged</th></tr></thead>
-            <tbody>
-            {% for name, v in t.fusion.comparison_test.items() %}
-              <tr class="{{ 'table-active' if 'ours' in name }}">
-                <td class="{{ 'fw-bold' if 'ours' in name }}">{{ name }}</td>
-                <td class="text-end">{{ num(v.precision, 2) }}</td>
-                <td><div class="d-flex align-items-center gap-2"><span class="fw-bold" style="width:2.8rem">{{ num(v.recall, 2) }}</span><div class="flex-fill">{{ bar(v.recall, 'green' if 'ours' in name else 'secondary', height="progress-sm") }}</div></div></td>
-                <td class="text-end fw-bold">{{ num(v.f1, 2) }}</td><td class="text-end">{{ pct(v.flag_rate) }}</td>
-              </tr>
-            {% endfor %}
-            </tbody>
-          </table>
+        <div class="callout callout-warning mt-0">
+          <strong><i class="cil-warning me-1"></i>Simulated orders.</strong> {{ t.fusion.n_test }} test orders, each pairing a test review with a test photo from a
+          different customer ({{ pct(t.fusion.problematic_share_test) }} problematic). They show how the decision logic behaves, not real shop data.
         </div>
-        <div class="row g-3">
-          <div class="col-lg-7">{{ fig("fusion_strategy_comparison", "The rules for when review and photo disagree lift recall from ~0.6 to 0.9.") }}</div>
-          <div class="col-lg-5">
-            <div class="card card-sm bg-blue-lt border-0"><div class="card-body">
-              <h4><i class="ti ti-adjustments me-1"></i>Weights used</h4>
-              <div class="datagrid">
-                <div class="datagrid-item"><div class="datagrid-title">Review negativity</div><div class="datagrid-content">{{ t.fusion.tuned_settings.weights.text }}</div></div>
-                <div class="datagrid-item"><div class="datagrid-title">Photo P(bad)</div><div class="datagrid-content">{{ t.fusion.tuned_settings.weights.image }}</div></div>
-                <div class="datagrid-item"><div class="datagrid-title">Issue tag found</div><div class="datagrid-content">{{ t.fusion.tuned_settings.weights.tag }}</div></div>
-                <div class="datagrid-item"><div class="datagrid-title">REVIEW / URGENT from</div><div class="datagrid-content">{{ t.fusion.tuned_settings.thresholds.review }} / {{ t.fusion.tuned_settings.thresholds.urgent }}</div></div>
-              </div>
-              <p class="text-secondary small mt-3 mb-0">Tuned on a separate set of simulated orders: the most balanced weights within 0.01 F1 of the best.</p>
+        <div class="row g-4">
+          <div class="col-xl-8">
+            <div class="chart-box" style="height: 360px"><canvas id="chart-fusion"></canvas></div>
+          </div>
+          <div class="col-xl-4">
+            <div class="card bg-body-tertiary border-0 h-100"><div class="card-body">
+              <div class="fw-semibold mb-3"><i class="cil-settings me-2"></i>Weights used</div>
+              {% set w = t.fusion.tuned_settings.weights %}
+              {% for label, v in [("Review negativity", w.text), ("Photo P(bad)", w.image), ("Issue tag found", w.tag)] %}
+                <div class="progress-group mb-3">
+                  <div class="progress-group-header"><div>{{ label }}</div><div class="ms-auto fw-semibold">{{ v }}</div></div>
+                  <div class="progress-group-bars"><div class="progress progress-thin"><div class="progress-bar bg-primary" style="width: {{ v * 100 }}%"></div></div></div>
+                </div>
+              {% endfor %}
+              <div class="small text-body-secondary">REVIEW from {{ t.fusion.tuned_settings.thresholds.review }}, URGENT from {{ t.fusion.tuned_settings.thresholds.urgent }}.
+                Tuned on a separate set of simulated orders: the most balanced weights within 0.01 F1 of the best.</div>
             </div></div>
           </div>
         </div>
@@ -136,18 +120,20 @@
       </div>
 
       <!-- LIMITATIONS -->
-      <div class="tab-pane" id="tab-limits" role="tabpanel">
-        <div class="list-group list-group-flush">
+      <div class="tab-pane fade" id="tab-limits" role="tabpanel">
+        <div class="row g-3">
           {% for icon, title, text in [
             ("star", "Star ratings as labels", "Sentiment labels come from star ratings, which are noisy: some \"very bad\" reviews are rated 3 stars."),
-            ("arrows-shuffle", "Simulated orders", "There is no public dataset with a review AND a photo per order, so the combined result pairs reviews and photos from different customers."),
-            ("photo-scan", "Photos differ from real customer photos", "Package photos mix real cardboard photos, product shots and 3D renders; the model is weakest on the renders."),
+            ("loop-circular", "Simulated orders", "There is no public dataset with a review AND a photo per order, so the combined result pairs reviews and photos from different customers."),
+            ("camera", "Photos differ from real customer photos", "Package photos mix real cardboard photos, product shots and 3D renders; the model is weakest on the renders."),
             ("apple", "Three fruits only", "The produce model knows apples, bananas and oranges."),
             ("copy", "Copies removed from the data", "84% of the original fruit images were rotated/flipped copies; they were removed so test scores are honest."),
           ] %}
-            <div class="list-group-item d-flex gap-3">
-              <span class="avatar avatar-sm bg-secondary-lt"><i class="ti ti-{{ icon }}"></i></span>
-              <div><div class="fw-bold">{{ title }}</div><div class="text-secondary">{{ text }}</div></div>
+            <div class="col-md-6">
+              <div class="d-flex gap-3 p-3 border rounded h-100">
+                <div class="avatar avatar-md bg-secondary-subtle text-secondary flex-shrink-0"><i class="cil-{{ icon }}"></i></div>
+                <div><div class="fw-semibold">{{ title }}</div><div class="small text-body-secondary">{{ text }}</div></div>
+              </div>
             </div>
           {% endfor %}
         </div>
@@ -155,4 +141,21 @@
     </div>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='charts.js') }}"></script>
+<script>
+  const C = {{ charts|tojson }};
+  groupBars("chart-text", C.text.labels, C.text.f1, C.text.group, C.text.used);
+  ["packages", "produce"].forEach(d => metricBars("chart-" + d,
+      C[d].labels.map((l, i) => C[d].used[i] ? l + " ★" : l),
+      [{ label: "macro-F1", data: C[d].f1 }, { label: "recall of the bad class", data: C[d].recall }]));
+  metricBars("chart-fusion", C.fusion.labels.map((l, i) => C.fusion.used[i] ? l + " ★" : l),
+      [{ label: "precision", data: C.fusion.precision }, { label: "recall", data: C.fusion.recall }, { label: "F1", data: C.fusion.f1 }]);
+  // Charts in hidden tabs have no size when the page loads; redraw them when their tab opens.
+  document.querySelectorAll('[data-coreui-toggle="tab"]').forEach(t => t.addEventListener("shown.coreui.tab", () => {
+    Object.values(Chart.instances).forEach(c => c.resize());
+  }));
+</script>
 {% endblock %}

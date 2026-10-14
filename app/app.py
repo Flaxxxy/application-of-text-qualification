@@ -90,7 +90,7 @@ def home():
         "produce_f1": m.get("image_produce", {}).get("mobilenetv2", {}).get("test", {}).get("macro_f1"),
         "fusion": m.get("fusion", {}).get("simulated_orders", {}).get("comparison_test", {}),
     }
-    return render_template("home.html", stats=stats)
+    return render_template("home.html", stats=stats, charts=chart_data(model_tables(m)))
 
 
 @app.route("/check", methods=["GET", "POST"])
@@ -192,10 +192,32 @@ def model_tables(m: dict) -> dict:
             "deploy": m.get("deploy", {}).get("summary", {})}
 
 
+def chart_data(t: dict) -> dict:
+    """Plain lists for the Chart.js charts (Dashboard widgets and the Models page)."""
+    pretty = {"distilbert_finetuned": "DistilBERT (fine-tuned)", "roberta_finetuned": "RoBERTa (fine-tuned)",
+              "tfidf_logreg": "TF-IDF + LR", "naive_bayes": "Naive Bayes", "minilm_logreg": "MiniLM + LR",
+              "textblob": "TextBlob", "bench_nlptown_stars": "nlptown BERT (ready-made)",
+              "bench_cardiffnlp_roberta": "Cardiff RoBERTa (ready-made)",
+              "bench_hf_default_pipeline": "HF default pipeline (ready-made)", "mobilenetv2": "MobileNetV2",
+              "small_cnn": "Small CNN", "bench_clip_zero_shot": "CLIP zero-shot (ready-made)"}
+    text = t["text"]
+    out = {"text": {"labels": [pretty.get(r["name"], r["name"]) for r in text], "f1": [r["f1"] for r in text],
+                    "group": [r["group"] for r in text], "used": [r["name"] == "distilbert_finetuned" for r in text]}}
+    for domain, d in t["images"].items():
+        out[domain] = {"labels": [pretty.get(r["name"], r["name"]) for r in d["rows"]], "f1": [r["f1"] for r in d["rows"]],
+                       "recall": [r["recall"] for r in d["rows"]], "used": [r["name"] == "mobilenetv2" for r in d["rows"]]}
+    comp = t["fusion"].get("comparison_test", {})
+    out["fusion"] = {"labels": list(comp), "precision": [v["precision"] for v in comp.values()],
+                     "recall": [v["recall"] for v in comp.values()], "f1": [v["f1"] for v in comp.values()],
+                     "used": ["ours" in k for k in comp]}
+    return out
+
+
 @app.get("/models")
 def models():
     figures = {f.stem for f in FIGURES.glob("*.png")}
-    return render_template("models.html", t=model_tables(load_results()), figures=figures)
+    t = model_tables(load_results())
+    return render_template("models.html", t=t, figures=figures, charts=chart_data(t))
 
 
 @app.get("/figures/<path:name>")

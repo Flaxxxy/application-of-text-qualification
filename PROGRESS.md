@@ -203,3 +203,12 @@ tabs on Models, empty states. Custom CSS ~50 lines. Checked with headless Chrome
 Gotcha found: Tabler 1.6 hides a vertical sidebar when a top navbar is a sibling in `.page` unless
 `<html data-bs-navbar-position="vertical">` is set, and then hides a top bar that is a direct child of `.page`; the top bar now
 lives inside `.page-wrapper`. Note: the pages need internet in the browser (CDN). 90 tests pass; peak RAM 251–281 MB.
+
+**UI switched to CoreUI (2026-10-15, Denis's request: "still looks not that good").** CoreUI 5.9.1 (MIT) + CoreUI free icons 3.1.0
+(MIT) + Chart.js 4.5.1 (MIT), all via jsDelivr. Gradient dark sidebar with section titles, sticky header with breadcrumb and
+"Models loaded" badge, Dashboard with 4 gradient widget cards each carrying a mini Chart.js bar chart of the real model results,
+CoreUI progress groups, callouts, border-accented counter cards, tables; Models page now uses interactive Chart.js charts
+(`app/static/charts.js`: value labels on bars, validated colours, en-US number format) instead of the PNG comparisons
+(confusion matrix, Grad-CAM and top-words figures stay as images). Gotchas: CoreUI core CSS only sets
+`--cui-sidebar-occupy-start`; the `.wrapper` padding rule comes from the admin template, so it's added in styles.css;
+`text-bg-*-subtle` doesn't exist in CoreUI (use `bg-*-subtle text-*-emphasis`). Checked at 1920×1080. 90 tests pass.

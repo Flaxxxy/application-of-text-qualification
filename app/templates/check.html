@@ -1,138 +1,136 @@
 {% extends "base.html" %}
-{% from "_macros.html" import status_badge, status_color, pct, num, bar, SENTIMENT %}
+{% from "_macros.html" import status_badge, status_color, status_title, pct, num, bar, category_avatar, SENTIMENT %}
 {% block title %}Check an order{% endblock %}
-{% block pretitle %}One order{% endblock %}
 {% block heading %}Check an order{% endblock %}
+{% block subheading %}Paste a review, pick the category and (optionally) add the customer's photo{% endblock %}
 {% block content %}
-<div class="row row-cards">
-  <!-- Left: the form + examples -->
+<div class="row g-4">
+  <!-- Left: form + examples -->
   <div class="col-lg-5">
-    <form class="card" method="post" enctype="multipart/form-data" action="{{ url_for('check') }}">
-      <div class="card-header"><h3 class="card-title"><i class="ti ti-message-search me-2"></i>Order details</h3></div>
+    <form class="card mb-4" method="post" enctype="multipart/form-data" action="{{ url_for('check') }}">
+      <div class="card-header"><i class="cil-description me-2"></i><strong>Order details</strong></div>
       <div class="card-body">
         {% if error %}
-          <div class="alert alert-danger" role="alert"><div class="d-flex gap-2"><i class="ti ti-alert-circle"></i><div>{{ error }}</div></div></div>
+          <div class="alert alert-danger d-flex gap-2" role="alert"><i class="cil-warning mt-1"></i><div>{{ error }}</div></div>
         {% endif %}
         <div class="mb-3">
-          <label class="form-label required" for="review_text">Review text</label>
+          <label class="form-label fw-semibold" for="review_text">Review text</label>
           <textarea class="form-control" id="review_text" name="review_text" rows="5" required
                     placeholder="e.g. The box arrived crushed and the mug inside was broken. I want a refund.">{{ form.review_text }}</textarea>
         </div>
         <div class="mb-3">
-          <label class="form-label" for="category">Product category</label>
+          <label class="form-label fw-semibold" for="category">Product category</label>
           <select class="form-select" id="category" name="category">
             {% for c in categories %}
               <option value="{{ c }}" {{ 'selected' if form.category == c }}>{{ c|capitalize }} — photo checked for {{ "rot" if routing.get(c) == "produce" else "package damage" }}</option>
             {% endfor %}
           </select>
         </div>
-        <div class="mb-1">
-          <label class="form-label" for="photo">Customer photo <span class="form-label-description">optional</span></label>
+        <div>
+          <label class="form-label fw-semibold" for="photo">Customer photo <span class="fw-normal text-body-secondary">(optional)</span></label>
           <input class="form-control" id="photo" type="file" name="photo" accept="image/jpeg,image/png,image/webp">
-          <small class="form-hint">JPG, PNG or WEBP, max 10 MB.
-            {% if form.demo %}Leave empty to use the photo of demo order <strong>{{ form.demo }}</strong>.{% endif %}</small>
+          <div class="form-text">JPG, PNG or WEBP, max 10 MB.{% if form.demo %} Leave empty to use the photo of demo order <strong>{{ form.demo }}</strong>.{% endif %}</div>
           {% if form.demo %}<input type="hidden" name="demo" value="{{ form.demo }}">{% endif %}
         </div>
       </div>
-      <div class="card-footer text-end">
-        <button class="btn btn-primary" type="submit"><i class="ti ti-search me-1"></i>Check order</button>
+      <div class="card-footer d-flex justify-content-end">
+        <button class="btn btn-primary" type="submit"><i class="cil-magnifying-glass me-2"></i>Check order</button>
       </div>
     </form>
 
-    <div class="card mt-3">
-      <div class="card-header"><h3 class="card-title"><i class="ti ti-player-play me-2"></i>Try an example</h3></div>
-      <div class="list-group list-group-flush example-list overflow-auto" style="max-height: 360px">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="cil-media-play me-2"></i><strong>Try an example</strong></span>
+        <span class="small text-body-secondary">simulated orders</span>
+      </div>
+      <div class="list-group list-group-flush overflow-auto" style="max-height: 340px">
         {% for d in demos %}
-          <a href="{{ url_for('check', demo=d.order_id) }}" class="list-group-item list-group-item-action d-flex align-items-center gap-2 {{ 'active' if form.demo == d.order_id }}">
-            <span class="avatar avatar-xs {{ 'bg-blue-lt' if d.category == 'electronics' else 'bg-green-lt' if d.category == 'grocery' else 'bg-secondary-lt' }}">
-              <i class="ti ti-{{ 'package' if d.category == 'electronics' else 'apple' if d.category == 'grocery' else 'message-2' }}"></i></span>
-            <span class="text-secondary small">{{ d.order_id }}</span>
-            <span class="text-truncate">{{ d.shows.split(' -> ')[0] }}</span>
-            {% if not d.image %}<i class="ti ti-photo-off text-secondary ms-auto" title="no photo"></i>{% endif %}
+          <a href="{{ url_for('check', demo=d.order_id) }}" class="list-group-item list-group-item-action d-flex align-items-center gap-3 {{ 'active' if form.demo == d.order_id }}">
+            {{ category_avatar(d.category) }}
+            <div class="text-truncate"><div class="small text-body-secondary">{{ d.order_id }}</div>{{ d.shows.split(' -> ')[0] }}</div>
+            {% if not d.image %}<i class="cil-image ms-auto text-body-secondary opacity-50" title="no photo"></i>{% endif %}
           </a>
         {% endfor %}
       </div>
-      <div class="card-footer text-secondary small">Simulated: each review and photo come from different customers.</div>
     </div>
   </div>
 
-  <!-- Right: the result -->
+  <!-- Right: result -->
   <div class="col-lg-7">
     {% if result %}
       {% set r = result.row %}
       {% set color = status_color(r.status) %}
-      <div class="card">
-        <div class="card-status-top bg-{{ color }}"></div>
+      <div class="card border-top-{{ color }} border-top-3 mb-4">
         <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
-              <div class="text-secondary text-uppercase small fw-bold">Decision</div>
-              <div class="h2 mb-0">{{ {"OK": "No action needed", "REVIEW": "Needs a human check", "URGENT": "Urgent: problem confirmed"}[r.status] }}</div>
+              <div class="text-uppercase small fw-semibold text-body-secondary">Decision</div>
+              <div class="fs-3 fw-semibold">{{ status_title(r.status) }}</div>
             </div>
             {{ status_badge(r.status, true) }}
           </div>
-          <div class="d-flex justify-content-between small text-secondary mb-1">
-            <span>Risk score <strong class="text-body">{{ "%.2f"|format(r.risk) }}</strong></span>
-            <span>REVIEW from 0.40 · URGENT from 0.70</span>
+          <div class="d-flex justify-content-between small text-body-secondary mb-1">
+            <span>Risk score <strong class="text-body">{{ "%.2f"|format(r.risk) }}</strong></span><span>REVIEW from 0.40 · URGENT from 0.70</span>
           </div>
-          {{ bar(r.risk, color) }}
-          <h4 class="mt-4 mb-2">Why</h4>
-          <ul class="list-unstyled mb-0">
-            {% for reason in result.reasons %}
-              <li class="d-flex gap-2 mb-2 {{ 'fw-bold' if loop.first }}">
-                <i class="ti ti-{{ 'arrow-right' if loop.first else 'point' }} text-{{ color if loop.first else 'secondary' }} mt-1"></i><span>{{ reason }}</span>
-              </li>
-            {% endfor %}
-          </ul>
+          {{ bar(r.risk, color, thin=false) }}
+          <div class="fw-semibold mt-4 mb-2">Why</div>
+          {% for reason in result.reasons %}
+            <div class="d-flex gap-2 mb-2 {{ 'fw-semibold' if loop.first }}">
+              <i class="cil-{{ 'arrow-right' if loop.first else 'chevron-right' }} text-{{ color if loop.first else 'body-secondary' }} mt-1"></i><span>{{ reason }}</span>
+            </div>
+          {% endfor %}
         </div>
       </div>
 
-      <div class="row row-cards mt-0">
+      <div class="row g-4">
         <div class="col-md-7">
           <div class="card h-100">
-            <div class="card-header">
-              <h3 class="card-title"><i class="ti ti-message-2 me-2"></i>Review</h3>
-              <div class="card-actions">
-                {% set sc, si = SENTIMENT[r.sentiment] %}
-                <span class="badge bg-{{ sc }}-lt"><i class="ti ti-{{ si }} me-1"></i>{{ r.sentiment }}</span>
-              </div>
+            {% set sc, si = SENTIMENT[r.sentiment] %}
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><i class="cil-speech me-2"></i><strong>Review</strong></span>
+              <span class="badge text-bg-{{ sc }}"><i class="cil-{{ si }} me-1"></i>{{ r.sentiment }}</span>
             </div>
             <div class="card-body">
               {% for label, p in result.probs.items() %}
                 {% set c, i = SENTIMENT[label] %}
-                <div class="row align-items-center g-2 mb-2">
-                  <div class="col-3 small"><i class="ti ti-{{ i }} me-1 text-{{ c }}"></i>{{ label }}</div>
-                  <div class="col">{{ bar(p, c, height="progress-sm") }}</div>
-                  <div class="col-2 text-end small fw-bold">{{ pct(p) }}</div>
+                <div class="progress-group mb-3">
+                  <div class="progress-group-header">
+                    <i class="cil-{{ i }} me-2 text-{{ c }}"></i><div>{{ label }}</div>
+                    <div class="ms-auto fw-semibold">{{ pct(p) }}</div>
+                  </div>
+                  <div class="progress-group-bars">{{ bar(p, c) }}</div>
                 </div>
               {% endfor %}
-              <hr class="my-3">
+              <hr>
               <p class="review-text mb-3">{% for text, tag in result.pieces %}{% if tag %}<mark title="{{ tag.replace('_', ' ') }}">{{ text }}</mark>{% else %}{{ text }}{% endif %}{% endfor %}</p>
               {% if result.tags %}
-                <div class="d-flex flex-wrap gap-1">{% for tag in result.tags %}<span class="badge bg-yellow-lt"><i class="ti ti-tag me-1"></i>{{ tag.replace("_", " ") }}</span>{% endfor %}</div>
+                <div class="d-flex flex-wrap gap-1">{% for tag in result.tags %}<span class="badge bg-warning-subtle border border-warning-subtle text-warning-emphasis"><i class="cil-tag me-1"></i>{{ tag.replace("_", " ") }}</span>{% endfor %}</div>
               {% else %}
-                <span class="text-secondary small"><i class="ti ti-tag me-1"></i>No issue tags found.</span>
+                <span class="small text-body-secondary"><i class="cil-tag me-1"></i>No issue tags found.</span>
               {% endif %}
             </div>
           </div>
         </div>
         <div class="col-md-5">
           <div class="card h-100">
-            <div class="card-header"><h3 class="card-title"><i class="ti ti-photo me-2"></i>Photo</h3></div>
+            <div class="card-header"><i class="cil-camera me-2"></i><strong>Photo</strong></div>
             <div class="card-body">
               {% if r.has_photo %}
+                {% set bad = r.p_bad >= result.photo_threshold %}
                 <img class="order-photo mb-3" src="{{ photo_uri }}" alt="customer photo">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="small text-secondary">{{ r.photo_model }} model</span>
-                  <span class="badge bg-{{ 'red' if r.p_bad >= result.photo_threshold else 'green' }}-lt">{{ r.photo_result }}</span>
+                <div class="progress-group mb-1">
+                  <div class="progress-group-header">
+                    <div class="small text-body-secondary">{{ r.photo_model }} model</div>
+                    <span class="ms-auto badge text-bg-{{ 'danger' if bad else 'success' }}">{{ r.photo_result }}</span>
+                  </div>
+                  <div class="progress-group-bars mt-2">{{ bar(r.p_bad, 'danger' if bad else 'success', result.photo_threshold) }}</div>
                 </div>
-                {{ bar(r.p_bad, 'red' if r.p_bad >= result.photo_threshold else 'green', result.photo_threshold) }}
-                <div class="small text-secondary mt-1">P(bad) {{ pct(r.p_bad, 1) }} · flagged from {{ pct(result.photo_threshold) }}</div>
+                <div class="small text-body-secondary">P(bad) {{ pct(r.p_bad, 1) }} · flagged from {{ pct(result.photo_threshold) }}</div>
               {% else %}
-                <div class="empty py-4">
-                  <div class="empty-icon"><i class="ti ti-photo-off"></i></div>
-                  <p class="empty-title">No photo</p>
-                  <p class="empty-subtitle text-secondary">The decision is based on the text only.</p>
+                <div class="text-center py-4">
+                  <div class="empty-icon"><i class="cil-image"></i></div>
+                  <div class="fw-semibold">No photo</div>
+                  <div class="small text-body-secondary">The decision is based on the text only.</div>
                 </div>
               {% endif %}
             </div>
@@ -140,17 +138,13 @@
         </div>
       </div>
     {% else %}
-      <div class="card">
-        <div class="card-body">
-          <div class="empty">
-            <div class="empty-icon"><i class="ti ti-shield-check"></i></div>
-            <p class="empty-title">Check an order to see the decision</p>
-            <p class="empty-subtitle text-secondary">You'll get OK / REVIEW / URGENT with the reasons, the review's sentiment with the
-              phrases that triggered each issue tag, and the photo model's verdict.</p>
-            <div class="empty-action">
-              <a href="{{ url_for('check', demo='DEMO-05') }}" class="btn btn-primary"><i class="ti ti-player-play me-1"></i>Load an example</a>
-            </div>
-          </div>
+      <div class="card h-100">
+        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-5">
+          <div class="empty-icon mb-2"><i class="cil-shield-alt"></i></div>
+          <div class="fs-5 fw-semibold mb-1">Check an order to see the decision</div>
+          <p class="text-body-secondary mb-4" style="max-width: 440px">You'll get OK / REVIEW / URGENT with the reasons, the review's
+            sentiment with the phrases that triggered each issue tag, and the photo model's verdict.</p>
+          <a href="{{ url_for('check', demo='DEMO-05') }}" class="btn btn-primary"><i class="cil-media-play me-2"></i>Load an example</a>
         </div>
       </div>
     {% endif %}
