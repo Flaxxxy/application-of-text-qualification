@@ -1,4 +1,4 @@
-"""Tests for label mapping and text cleaning (CLAUDE.md section 8)."""
+"""Tests for label mapping, title handling, text cleaning, deduplication and balancing."""
 
 import pandas as pd
 import pytest

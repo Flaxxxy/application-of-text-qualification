@@ -17,7 +17,6 @@ import json
 import os
 import secrets
 import uuid
-from pathlib import Path
 
 from flask import Flask, abort, render_template, request, send_from_directory, session, url_for
 from PIL import Image

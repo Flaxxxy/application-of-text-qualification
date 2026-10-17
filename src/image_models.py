@@ -10,7 +10,7 @@ Each trainable model is built as two parts:
     core      = preprocessing + network + softmax head. Takes raw RGB pixels 0-255. This is what we
                 save and export to ONNX, so the website only has to resize the photo.
     augmenter = random flips/rotations/zoom/brightness, used only while training.
-Keeping augmentation out of `core` matters for the ONNX export (Phase 5): random layers are
+Keeping augmentation out of `core` matters for the ONNX export (src/export_onnx.py): random layers are
 training-only and some converters can't handle them.
 
 Outputs are 2 probabilities [P(good), P(bad)]; "bad" = damaged / rotten.

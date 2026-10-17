@@ -10,9 +10,12 @@ Models, from simplest to most complex:
     TextBlobModel       rule-based polarity score, no training (course baseline)
     NaiveBayesModel     word counts + Multinomial Naive Bayes
     TfidfLogRegModel    TF-IDF of words and word pairs + Logistic Regression
-    MiniLMLogRegModel   MiniLM sentence embeddings + Logistic Regression  <- deployed in the app
+    MiniLMLogRegModel   MiniLM sentence embeddings + Logistic Regression (first plan for the website)
     HFBenchmarkModel    ready-made sentiment models from Hugging Face, used as they are
     finetune_transformer()  fine-tunes DistilBERT / RoBERTa on our data (Colab, GPU)
+
+The website uses the fine-tuned DistilBERT (exported to 8-bit ONNX by src/export_onnx.py): it scored
+0.768 macro-F1 vs 0.696 for MiniLM + LR and still fits the 512 MB server.
 """
 
 from __future__ import annotations

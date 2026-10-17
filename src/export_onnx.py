@@ -1,4 +1,4 @@
-"""Export the deployed models to ONNX for the website (Phase 5).
+"""Export the deployed models to ONNX for the website.
 
 Run:  python -m src.export_onnx
 

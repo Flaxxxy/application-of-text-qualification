@@ -3,7 +3,7 @@
 Run everything:   python -m src.data_text
 Or step by step from notebooks/01_text_data.ipynb.
 
-Unified schema (CLAUDE.md 5.1): review_id, source, category, text, rating, label
+Unified schema: review_id, source, category, text, rating, label
 plus `text_classical` (the heavier cleaning for Naive Bayes / TF-IDF, see preprocess_text.py).
 """
 
@@ -91,7 +91,7 @@ def load_flipkart() -> pd.DataFrame:
     Why not `Review`: it is not written by customers. Flipkart picks it from the star
     rating ("terrific" = 5 stars in 99% of rows, "delightful" = 4 stars). Training on it
     would teach the model to read the star rating, not the sentiment.
-    Why not `Sentiment`: it was made by the VADER tool, not by people (CLAUDE.md 5.1).
+    Why not `Sentiment`: it was made by the VADER tool, not by people, so it isn't a real label.
     `Rate` has 3 broken rows that contain product names; to_numeric turns them into NaN.
     """
     src = load_config()["text"]["sources"]["flipkart"]

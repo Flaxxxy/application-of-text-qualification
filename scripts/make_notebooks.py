@@ -335,7 +335,7 @@ print("Images per fruit and class:"); display(produce["subtype_counts"])"""),
   and "damaged" mostly brown shipping cardboard (plus some label noise); the Kaggle packages are 3D renders of one box
   on one conveyor belt. A model could learn "brown cardboard = damaged". We therefore added **BoxCondition**, where both
   classes are brown cardboard boxes (650 damaged / 649 intact after copy removal), so the model has to learn the damage
-  itself. Grad-CAM in Phase 4 will show where the model looks, and results are reported per source.
+  itself. Grad-CAM in the Colab image notebooks shows where the model looks, and results are reported per source.
 """),
     ]
 
@@ -524,7 +524,7 @@ for name in ["small_cnn", "mobilenetv2"]:
               f"results/figures/cm_image_{domain}_{{name}}.png",
               f"results/figures/history_{domain}_{{name}}.png",
               f"results/figures/gradcam_{domain}_{{name}}.png"]
-files.append("models/train/image_{domain}_mobilenetv2.keras")   # needed for the website (Phase 5)
+files.append("models/train/image_{domain}_mobilenetv2.keras")   # needed for the website (ONNX export)
 for f in files:
     dst = DRIVE / f
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -568,7 +568,7 @@ FINDINGS_IMAGE = {
 - **Rot is easy to see:** even the CNN from scratch reaches 0.94, and MobileNetV2 0.977 with no false alarms on the test set.
 - **Per fruit (MobileNetV2):** banana 1.000, orange 0.978, apple 0.952. Grad-CAM highlights the brown/mouldy patches.
 - **Fine-tuning helped** (validation loss 0.06 → 0.045), so the fine-tuned model is kept.
-- These scores are honest only because 84% of the original images (copies) were removed in Phase 3; with copies in the
+- These scores are honest only because 84% of the original images (copies) were removed in notebook 04; with copies in the
   test set the numbers would look even higher but mean less.
 """,
 }

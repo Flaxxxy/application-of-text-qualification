@@ -1,6 +1,6 @@
 """Build the image datasets: index raw photos -> check -> remove near-duplicates -> resize -> split.
 
-Two domains (CLAUDE.md 5.2), one binary model each:
+Two domains, one binary model each:
     packages: damaged vs intact   (Kaggle renders + 2 Roboflow sets, merged) -> shipping damage
     produce:  rotten  vs fresh    (Kaggle fruits, fruit type kept as metadata) -> product defects
 

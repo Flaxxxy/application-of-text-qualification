@@ -33,7 +33,7 @@ def _session(file: Path, threads: int):
     import onnxruntime as ort
 
     opts = ort.SessionOptions()
-    opts.intra_op_num_threads = threads  # the free Render server has a fraction of one CPU
+    opts.intra_op_num_threads = threads  # small hosting plans give us about one CPU or less
     opts.inter_op_num_threads = 1
     return ort.InferenceSession(str(file), opts, providers=["CPUExecutionProvider"])
 

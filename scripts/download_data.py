@@ -52,7 +52,7 @@ def _already_done(folder: Path, name: str) -> bool:
 
 
 def _too_big(size_bytes: int | None, name: str, allow_large: bool) -> bool:
-    """Stop before huge downloads unless the user said --allow-large (CLAUDE.md rule: ask > 2 GB)."""
+    """Stop before huge downloads (above download.max_size_gb in config.yaml) unless --allow-large is given."""
     limit_gb = load_config()["download"]["max_size_gb"]
     if size_bytes is None:
         print(f"[warn] {name}: size unknown, continuing")

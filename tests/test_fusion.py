@@ -1,4 +1,4 @@
-"""Tests for the fusion rules (CLAUDE.md section 6, Phase 6). They use fixed inputs, no models."""
+"""Tests for the fusion rules (src/fusion.py). They use fixed inputs, no models."""
 
 import pytest
 

@@ -312,7 +312,7 @@ def tune_weights(scored_val, tolerance: float = 0.01) -> tuple[dict, float, dict
 # ------------------------------------------------------------ experiment + plots --
 
 def run_fusion_experiment(predictor=None, save: bool = True) -> dict:
-    """Whole Phase 6 experiment: build simulated orders, score them with the deployed models,
+    """The whole fusion experiment: build simulated orders, score them with the deployed models,
     tune weights on the validation orders, and compare strategies on the test orders.
 
     Saves results/fusion_simulated_test.csv (every test order with its decision) and the numbers

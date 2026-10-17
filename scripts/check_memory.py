@@ -1,10 +1,10 @@
-"""Measure the website's peak memory (RAM) the way Render will run it: gunicorn, 1 worker.
+"""Measure the website's peak memory (RAM) the way the hosting server runs it: gunicorn, 1 worker.
 
 Usage:  python scripts/check_memory.py
 
 Starts gunicorn on a free port, then does what a visitor does: opens every page, checks one order
-with a photo, runs the 12 demo orders as a batch. Meanwhile it samples the memory (RSS) of the
-gunicorn processes every 0.1 s. Render's free tier has 512 MB; our target is < 450 MB.
+with a photo, runs the 12 example orders as a batch. Meanwhile it samples the memory (RSS) of the
+gunicorn processes every 0.1 s. Heroku Basic and Render's free plan have 512 MB; our target is < 450 MB.
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ def main() -> None:
         post_multipart(base + "/check", {"review_text": "The box arrived crushed and I want a refund.",
                                          "category": "electronics"}, {"photo": ("p.jpg", photo, "image/jpeg")})
         one_order_s = time.time() - t
-        step["name"] = "batch: 12 demo orders"
+        step["name"] = "batch: 12 example orders"
         t = time.time()
         post_multipart(base + "/batch", {"action": "demo"}, {})
         batch_s = time.time() - t
@@ -108,7 +108,7 @@ def main() -> None:
     peak = max(samples, key=lambda s: s[2])
     print(f"start-up (models loaded):  {startup_s:5.1f} s, {after_start:6.1f} MB")
     print(f"one order with photo:      {one_order_s:5.2f} s")
-    print(f"batch of 12 demo orders:   {batch_s:5.2f} s")
+    print(f"batch of 12 example orders: {batch_s:5.2f} s")
     print(f"PEAK memory:               {peak[2]:6.1f} MB (during: {peak[1]})")
     print(f"target < {TARGET_MB} MB -> {'OK' if peak[2] < TARGET_MB else 'TOO HIGH'}")
 

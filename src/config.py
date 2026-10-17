@@ -1,8 +1,8 @@
 """Load config.yaml and give every module the same settings and paths.
 
-Why: CLAUDE.md forbids hard-coded absolute paths. Every script and notebook calls
+Why: no file in the project uses hard-coded absolute paths. Every script and notebook calls
 `load_config()` and `path(...)`, so the project runs the same on my Mac, on Colab
-and on Render, no matter which folder it was cloned into.
+and on the hosting server, no matter which folder it was cloned into.
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 """SQLite log of every prediction the website makes (shown on the History page).
 
-SQLite is a single file and needs no server, which suits a demo. On Render the file is reset on
-every redeploy, which is fine for a demo (noted in the README).
+SQLite is a single file and needs no server, which suits a demo. On Heroku (and Render) the file lives on
+the server's temporary disk and resets on every restart or redeploy, which is fine for a demo (noted in the README).
 """
 
 from __future__ import annotations
