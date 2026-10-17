@@ -1,0 +1,10 @@
+# Files Heroku does not need to run the website (keeps the server copy small).
+notebooks/
+tests/
+docs/
+data/
+results/predictions/
+results/colab/
+*.ipynb
+code.zip
+images.zip

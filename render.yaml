@@ -1,0 +1,12 @@
+# Backup host: Render (https://render.com). Heroku is the main host (Procfile).
+services:
+  - type: web
+    name: review-flagging
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-app.txt
+    startCommand: gunicorn app.app:app --workers 1 --timeout 120 --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.13"

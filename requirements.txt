@@ -1,0 +1,3 @@
+# Hosting platforms (Heroku, Render) look for this file name. It installs only the slim
+# website requirements; for training use requirements-train.txt instead.
+-r requirements-app.txt

@@ -252,3 +252,4 @@ retail-review-flagging/
 - **Packages data (2026-10-13):** added Roboflow `sih-yna9n/boxcondition-onzuw` (BoxCondition, CC BY 4.0, classification) as a third package source, because the two planned sources are biased (intact = product boxes, damaged = brown cardboard; Kaggle = 3D renders).
 - **Website text model (2026-10-13):** fine-tuned DistilBERT exported to ONNX int8 replaces MiniLM + LR (section 3), if its measured size/RAM/speed fit Render in Phase 5; otherwise fall back to TF-IDF + LR.
 - **Copy detection (Phase 3):** SSCD copy-detection embeddings instead of perceptual hashes (hashes missed rotated copies and wrongly merged different renders); see PROGRESS.md.
+- **Hosting (2026-10-17):** Heroku (Basic dyno, paid by the GitHub Student Developer Pack credit) instead of Render; `render.yaml` kept as a backup. Same start command (`Procfile`).
