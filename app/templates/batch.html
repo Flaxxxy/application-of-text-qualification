@@ -1,117 +1,95 @@
 {% extends "base.html" %}
-{% from "_macros.html" import status_badge, pct, category_avatar, SENTIMENT %}
-{% block title %}Batch check{% endblock %}
-{% block heading %}Batch check{% endblock %}
-{% block subheading %}Check up to {{ max_rows }} orders at once from a CSV, with an optional ZIP of photos{% endblock %}
-{% block actions %}
-  {% if rows %}<a class="btn btn-primary" href="{{ csv_uri }}" download="flagged_orders.csv"><i class="cil-cloud-download me-2"></i>Download results CSV</a>{% endif %}
-{% endblock %}
+{% from "_macros.html" import status, icon, pct %}
+{% block title %}Batch{% endblock %}
 {% block content %}
-<div class="row g-4 mb-4">
-  <div class="col-lg-7">
-    <form class="card h-100" method="post" enctype="multipart/form-data" action="{{ url_for('batch') }}">
-      <div class="card-header"><i class="cil-cloud-upload me-2"></i><strong>Upload orders</strong></div>
-      <div class="card-body">
-        {% if error %}
-          <div class="alert alert-danger d-flex gap-2" role="alert"><i class="cil-warning mt-1"></i><div>{{ error }}</div></div>
-        {% endif %}
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label fw-semibold" for="orders"><i class="cil-spreadsheet me-1"></i>Orders CSV</label>
-            <input class="form-control" id="orders" type="file" name="orders" accept=".csv,text/csv">
-            <div class="form-text">Columns <code>order_id, category, review_text</code>.</div>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold" for="photos"><i class="cil-image me-1"></i>Photos ZIP <span class="fw-normal text-body-secondary">(optional)</span></label>
-            <input class="form-control" id="photos" type="file" name="photos" accept=".zip,application/zip">
-            <div class="form-text">Named by order id, e.g. <code>A-1001.jpg</code>. Max 30 MB.</div>
-          </div>
-        </div>
-      </div>
-      <div class="card-footer d-flex justify-content-end">
-        <button class="btn btn-primary" name="action" value="upload"><i class="cil-magnifying-glass me-2"></i>Check orders</button>
-      </div>
-    </form>
+<div class="page-head">
+  <div>
+    <h1>Check a batch</h1>
+    <p>Up to {{ max_rows }} orders from a CSV file, with an optional ZIP of photos.</p>
   </div>
-  <div class="col-lg-5">
-    <div class="card h-100">
-      <div class="card-header"><i class="cil-media-play me-2"></i><strong>No file at hand?</strong></div>
-      <div class="card-body d-flex flex-column">
-        <p class="text-body-secondary">Run the 12 demo orders: together they show every decision rule. Or download them as a template for your own CSV.</p>
-        <div class="mt-auto d-flex flex-wrap gap-2">
-          <form method="post" action="{{ url_for('batch') }}"><button class="btn btn-primary" name="action" value="demo"><i class="cil-media-play me-2"></i>Run the 12 demo orders</button></form>
-          <a class="btn btn-outline-secondary" href="{{ url_for('demo_file', name='orders.csv') }}"><i class="cil-spreadsheet me-1"></i>Example CSV</a>
-          <a class="btn btn-outline-secondary" href="{{ url_for('demo_file', name='photos.zip') }}"><i class="cil-image me-1"></i>Example photos</a>
-        </div>
+  {% if rows %}<a class="btn btn-secondary" href="{{ csv_uri }}" download="flagged_orders.csv">Download results</a>{% endif %}
+</div>
+
+<div class="grid grid-half">
+  <form class="card" method="post" enctype="multipart/form-data" action="{{ url_for('batch') }}">
+    <div class="card-title">Upload</div>
+    {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+    <div class="field">
+      <label for="orders">Orders (CSV)</label>
+      <div class="drop">
+        <div class="drop-thumb">{{ icon("text") }}</div>
+        <div class="drop-text"><b class="file-name">Choose a CSV file</b><span class="faint small">columns order_id, category, review_text</span></div>
+        <input id="orders" type="file" name="orders" accept=".csv,text/csv" aria-label="Choose a CSV file">
       </div>
     </div>
+    <div class="field">
+      <label for="photos">Photos (ZIP) <span class="faint" style="font-weight:400">optional</span></label>
+      <div class="drop">
+        <div class="drop-thumb">{{ icon("photo") }}</div>
+        <div class="drop-text"><b class="file-name">Choose a ZIP file</b><span class="faint small">photos named by order id, e.g. A-1001.jpg</span></div>
+        <input id="photos" type="file" name="photos" accept=".zip,application/zip" aria-label="Choose a ZIP file">
+      </div>
+    </div>
+    <button class="btn btn-primary" name="action" value="upload" style="width:100%">Check orders</button>
+  </form>
+
+  <div class="card">
+    <div class="card-title">No file at hand?</div>
+    <p class="muted">Try it with 12 example orders. Together they show every decision rule: matching and contradicting
+      reviews and photos, damage claims, and orders without a photo.</p>
+    <div class="actions" style="margin-top:22px">
+      <form method="post" action="{{ url_for('batch') }}"><button class="btn btn-primary" name="action" value="demo">Run example orders</button></form>
+      <a class="btn btn-secondary" href="{{ url_for('demo_file', name='orders.csv') }}">Example CSV</a>
+      <a class="btn btn-secondary" href="{{ url_for('demo_file', name='photos.zip') }}">Example photos</a>
+    </div>
+    <p class="faint small" style="margin-top:22px">Example orders pair real test reviews with test photos from different customers.</p>
   </div>
 </div>
 
 {% if rows %}
-<div class="row g-4 mb-4">
-  {% for s, color, icon in [("URGENT", "danger", "x-circle"), ("REVIEW", "warning", "warning"), ("OK", "success", "check-circle")] %}
-  <div class="col-sm-4">
-    <div class="card border-start border-start-4 border-start-{{ color }} h-100">
-      <div class="card-body d-flex align-items-center gap-3">
-        <div class="avatar avatar-lg bg-{{ color }}-subtle text-{{ color }}"><i class="cil-{{ icon }}"></i></div>
-        <div>
-          <div class="fs-3 fw-semibold lh-1">{{ counts[s] }} <span class="fs-6 fw-normal text-body-secondary">of {{ rows|length }}</span></div>
-          <div class="text-body-secondary small text-uppercase fw-semibold mt-1">{{ s }}</div>
-        </div>
-      </div>
+<section style="margin-top:48px">
+  <div class="page-head" style="margin-bottom:16px; align-items:center">
+    <h2 class="section-title" style="margin:0">{{ rows|length }} orders checked</h2>
+    <div class="segmented" role="group" aria-label="Filter by status" id="filters">
+      <button type="button" class="active" data-filter="all">All {{ rows|length }}</button>
+      {% for s, label in [("URGENT", "Urgent"), ("REVIEW", "Review"), ("OK", "OK")] %}<button type="button" data-filter="{{ s }}">{{ label }} {{ counts[s] }}</button>{% endfor %}
     </div>
   </div>
-  {% endfor %}
-</div>
-
-<div class="card">
-  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-    <span><strong>{{ rows|length }} orders checked</strong>{% if source == "demo" %}<span class="badge text-bg-secondary ms-2">demo orders · simulated</span>{% endif %}</span>
-    <div class="btn-group btn-group-sm" role="group" aria-label="Filter by status" id="filters">
-      <button type="button" class="btn btn-outline-secondary active" data-filter="all">All</button>
-      <button type="button" class="btn btn-outline-secondary" data-filter="URGENT"><i class="cil-x-circle text-danger me-1"></i>Urgent</button>
-      <button type="button" class="btn btn-outline-secondary" data-filter="REVIEW"><i class="cil-warning text-warning me-1"></i>Review</button>
-      <button type="button" class="btn btn-outline-secondary" data-filter="OK"><i class="cil-check-circle text-success me-1"></i>OK</button>
-    </div>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-hover border-0 mb-0" id="results">
-      <thead class="fw-semibold text-nowrap">
-        <tr class="align-middle">
-          <th class="bg-body-secondary"></th><th class="bg-body-secondary">Order</th><th class="bg-body-secondary">Status</th>
-          <th class="bg-body-secondary">Review</th><th class="bg-body-secondary">Sentiment</th><th class="bg-body-secondary">Issue tags</th>
-          <th class="bg-body-secondary">Photo</th><th class="bg-body-secondary">Main reason</th>
-        </tr>
-      </thead>
+  <div class="table-wrap">
+    <table id="results">
+      <thead><tr><th>Order</th><th>Decision</th><th>Review</th><th>Sentiment</th><th>Issues</th><th>Photo</th><th>Main reason</th></tr></thead>
       <tbody>
       {% for r in rows %}
-        {% set sc, si = SENTIMENT[r.sentiment] %}
-        <tr class="align-middle" data-status="{{ r.status }}">
-          <td class="text-center">{{ category_avatar(r.category) }}</td>
-          <td><div class="fw-semibold text-nowrap">{{ r.order_id }}</div><div class="small text-body-secondary">{{ r.category }}</div></td>
-          <td>{{ status_badge(r.status) }}</td>
-          <td class="cell-review small text-body-secondary">{{ r.review_text|truncate(115) }}</td>
-          <td><span class="text-{{ sc }} text-nowrap"><i class="cil-{{ si }} me-1"></i>{{ r.sentiment }}</span><div class="small text-body-secondary">neg {{ pct(r.p_negative) }}</div></td>
-          <td>{% for t in r.tags.split(", ") if t %}<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle mb-1">{{ t.replace("_", " ") }}</span> {% else %}<span class="text-body-secondary">–</span>{% endfor %}</td>
-          <td>{% if r.has_photo %}<span class="badge text-bg-{{ 'danger' if r.photo_result in ('damaged', 'rotten') else 'success' }}">{{ r.photo_result }}</span><div class="small text-body-secondary text-nowrap mt-1">P(bad) {{ pct(r.p_bad) }}</div>{% else %}<span class="text-body-secondary small text-nowrap"><i class="cil-image me-1 opacity-50"></i>none</span>{% endif %}</td>
+        <tr data-status="{{ r.status }}">
+          <td class="nowrap"><b style="font-weight:500">{{ r.order_id }}</b><div class="faint small">{{ r.category }}</div></td>
+          <td>{{ status(r.status) }}</td>
+          <td class="cell-review small">{{ r.review_text|truncate(110) }}</td>
+          <td class="nowrap">{{ r.sentiment }}<div class="faint small">neg {{ pct(r.p_negative) }}</div></td>
+          <td>{% for t in r.tags.split(", ") if t %}<span class="tag tag-issue">{{ t.replace("_", " ") }}</span>{% else %}<span class="faint">–</span>{% endfor %}</td>
+          <td class="nowrap">{% if r.has_photo %}{{ r.photo_result }}<div class="faint small">{{ pct(r.p_bad) }}</div>{% else %}<span class="faint">none</span>{% endif %}</td>
           <td class="small">{{ r.main_reason }}</td>
         </tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
-</div>
+</section>
 {% endif %}
 {% endblock %}
 {% block scripts %}
 <script>
-  // Show only the rows with the chosen status (no page reload).
+  // Status filter (no page reload).
   document.querySelectorAll("#filters button").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var f = btn.dataset.filter;
       document.querySelectorAll("#filters button").forEach(function (b) { b.classList.toggle("active", b === btn); });
       document.querySelectorAll("#results tbody tr").forEach(function (tr) { tr.hidden = f !== "all" && tr.dataset.status !== f; });
+    });
+  });
+  // Show the chosen file name in the drop area.
+  document.querySelectorAll(".drop input[type=file]").forEach(function (input) {
+    input.addEventListener("change", function () {
+      if (input.files && input.files[0]) input.parentElement.querySelector(".file-name").textContent = input.files[0].name;
     });
   });
 </script>

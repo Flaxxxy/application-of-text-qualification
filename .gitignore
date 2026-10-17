@@ -25,3 +25,7 @@ venv/
 .idea/
 code.zip
 images.zip
+
+# internal working notes (kept locally, not published)
+CLAUDE.md
+PROGRESS.md

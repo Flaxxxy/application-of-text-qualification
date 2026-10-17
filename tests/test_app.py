@@ -74,6 +74,12 @@ def test_batch_reports_csv_problems(client):
     assert b"missing" in r.data
 
 
-def test_history_shows_logged_orders(client):
+def test_history_shows_only_own_orders(client):
+    import app.app as webapp
+
+    other = webapp.app.test_client()                 # a different browser (no shared cookie)
+    assert b"example" in other.get("/history").data  # nothing checked yet -> example rows
     client.post("/batch", data={"action": "demo"})
-    assert client.get("/history").data.count(b"data-status=") >= 12
+    own = client.get("/history").data
+    assert own.count(b"status status-") >= 12 and b"pill\">example" not in own
+    assert b"pill\">example" in other.get("/history").data  # still only examples for the other browser

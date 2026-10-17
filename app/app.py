@@ -14,9 +14,12 @@ import base64
 import csv
 import io
 import json
+import os
+import secrets
+import uuid
 from pathlib import Path
 
-from flask import Flask, abort, render_template, request, send_from_directory
+from flask import Flask, abort, render_template, request, send_from_directory, session, url_for
 from PIL import Image
 
 from app.db import init_db, log_rows, recent
@@ -32,12 +35,27 @@ DEMO = ROOT / "demo_data"
 FIGURES = path("figures")
 
 app = Flask(__name__)
+# Signs the session cookie that holds the visitor's anonymous id. Set SECRET_KEY on the server to keep
+# history across restarts; without it a random key is used (history then resets on restart anyway).
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config["MAX_CONTENT_LENGTH"] = CFG["app"]["max_batch_upload_mb"] * 1024 * 1024  # whole request (CSV + ZIP)
 PREDICTOR = Predictor()
 init_db(DB)
 
 
 # ------------------------------------------------------------------ helpers --
+
+@app.before_request
+def ensure_visitor_id() -> None:
+    """Give every browser an anonymous id, so History shows only that visitor's own checks."""
+    if "visitor" not in session:
+        session["visitor"] = uuid.uuid4().hex
+        session.permanent = True
+
+
+def visitor() -> str:
+    return session.get("visitor", "")
+
 
 def demo_orders() -> list[dict]:
     with open(DEMO / "orders.csv", newline="", encoding="utf-8") as f:
@@ -90,7 +108,7 @@ def home():
         "produce_f1": m.get("image_produce", {}).get("mobilenetv2", {}).get("test", {}).get("macro_f1"),
         "fusion": m.get("fusion", {}).get("simulated_orders", {}).get("comparison_test", {}),
     }
-    return render_template("home.html", stats=stats, charts=chart_data(model_tables(m)))
+    return render_template("home.html", stats=stats)
 
 
 @app.route("/check", methods=["GET", "POST"])
@@ -102,6 +120,7 @@ def check():
         if d:
             form = {"review_text": d["review_text"], "category": d["category"], "demo": d["order_id"] if d["image"] else ""}
     result, error, photo_uri = None, None, None
+    preview = url_for("demo_file", name=f"images/{form['demo']}.jpg") if form["demo"] else None
     if request.method == "POST":
         form = {k: request.form.get(k, "") for k in ("review_text", "category", "demo")}
         try:
@@ -120,15 +139,16 @@ def check():
                     img = Image.open(DEMO / d["image"])
             row = process_orders([Order(form["demo"] or "web", category, text)],
                                  {form["demo"] or "web": img} if img else {}, PREDICTOR)[0]
-            log_rows(DB, [row], "single")
+            log_rows(DB, [row], "single", visitor())
             text_result = PREDICTOR.text(text)
             result = {"row": row, "probs": text_result["probs"], "tags": text_result["tags"],
                       "pieces": highlight(text, text_result["tags"]), "reasons": row["reasons"].split(" | "),
                       "photo_threshold": PREDICTOR.image_models[PREDICTOR.image_domain(category)].threshold}
             photo_uri = thumbnail_data_uri(img) if img else None
+            preview = photo_uri
         except InputError as e:
             error = str(e)
-    return render_template("check.html", form=form, result=result, error=error, photo_uri=photo_uri,
+    return render_template("check.html", form=form, result=result, error=error, photo_uri=photo_uri, preview=preview,
                            categories=CATEGORIES, demos=demos, routing=PREDICTOR.settings["routing"])
 
 
@@ -151,7 +171,7 @@ def batch():
                     if zip_file and zip_file.filename else {}
                 source = "batch"
             rows = process_orders(orders, images, PREDICTOR)
-            log_rows(DB, rows, source)
+            log_rows(DB, rows, source, visitor())
         except InputError as e:
             error = str(e)
     csv_uri = None
@@ -164,8 +184,18 @@ def batch():
 
 @app.get("/history")
 def history():
-    return render_template("history.html", rows=recent(DB, CFG["app"]["history_limit"]),
-                           limit=CFG["app"]["history_limit"])
+    rows = recent(DB, visitor(), CFG["app"]["history_limit"])
+    examples = []
+    if not rows:  # show what History will look like, using two demo orders (clearly marked as examples)
+        with open(DEMO / "expected.csv", newline="", encoding="utf-8") as f:
+            expected = {r["order_id"]: r for r in csv.DictReader(f)}
+        for d in demo_orders():
+            if d["order_id"] in ("DEMO-01", "DEMO-08"):
+                e = expected[d["order_id"]]
+                examples.append({"order_id": d["order_id"], "category": d["category"], "review_text": d["review_text"],
+                                 "status": e["status"], "sentiment": e["sentiment"],
+                                 "photo_result": "", "reasons": e["reasons"]})
+    return render_template("history.html", rows=rows, examples=examples, limit=CFG["app"]["history_limit"])
 
 
 def model_tables(m: dict) -> dict:

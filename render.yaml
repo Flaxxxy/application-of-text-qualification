@@ -4,7 +4,7 @@ services:
     name: review-flagging
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements-app.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.app:app --workers 1 --timeout 120 --bind 0.0.0.0:$PORT
     healthCheckPath: /health
     envVars:

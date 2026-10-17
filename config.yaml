@@ -181,5 +181,5 @@ app:
   max_upload_mb: 10               # one photo on the Check page
   max_batch_upload_mb: 30         # whole Batch upload (CSV + ZIP of photos)
   max_batch_rows: 100
-  history_limit: 50
+  history_limit: 20              # History shows the visitor's own last 20 checks
   db_path: app/predictions.db

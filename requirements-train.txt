@@ -1,6 +1,6 @@
 # Everything needed for data prep, training, evaluation and ONNX export.
 # Used locally (light text models) and on Colab (image models, DistilBERT).
-# The website uses requirements-app.txt instead, which is much smaller.
+# The website uses requirements.txt instead, which is much smaller.
 
 # core
 numpy

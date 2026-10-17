@@ -7,7 +7,7 @@ Many orders (CSV with order_id, category, review_text; photos optional, named by
     python scripts/flag.py --csv demo_data/orders.csv --images demo_data/images --out flagged.csv
     python scripts/flag.py --csv orders.csv --images photos.zip
 
-Needs only the slim app requirements (requirements-app.txt).
+Needs only the website requirements (requirements.txt).
 """
 
 from __future__ import annotations
