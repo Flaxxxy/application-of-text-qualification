@@ -6,6 +6,8 @@ one decision, **OK / REVIEW / URGENT**, with the reasons spelled out.
 
 Course project for "AI in Accounting & Finance" (NTU).
 
+**Live demo:** https://review-flagging-ntu-b5ca07dcc853.herokuapp.com/ (Heroku Basic, 512 MB; the prediction history resets when the server restarts).
+
 ![Check an order](docs/screenshots/check.png)
 
 ## Quick start (website)

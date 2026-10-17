@@ -212,3 +212,14 @@ CoreUI progress groups, callouts, border-accented counter cards, tables; Models 
 (confusion matrix, Grad-CAM and top-words figures stay as images). Gotchas: CoreUI core CSS only sets
 `--cui-sidebar-occupy-start`; the `.wrapper` padding rule comes from the admin template, so it's added in styles.css;
 `text-bg-*-subtle` doesn't exist in CoreUI (use `bg-*-subtle text-*-emphasis`). Checked at 1920×1080. 90 tests pass.
+
+## Phase 8 — Deploy (2026-10-17, checkpoint)
+
+**Live:** https://review-flagging-ntu-b5ca07dcc853.herokuapp.com/ (Heroku app `review-flagging-ntu`, 1 Basic dyno, 512 MB, no sleep).
+Paid by the GitHub Student Credit ($312, expires 2028-09-30; Basic = $7/month). Delete the app after grading to avoid charges after the credit ends.
+- Files: `Procfile`, `requirements.txt` (→ requirements-app.txt), `.python-version` (3.11), `.slugignore`; `render.yaml` kept as backup.
+- Simulated Heroku locally first (clean venv + Procfile command with $PORT): OK.
+- Build: slug 155.6 MB (limit 500). `log-runtime-metrics` enabled.
+- Live checks: all pages 200, friendly 404, photo check → URGENT (1.35 s incl. upload, from Singapore to Heroku US), 12 demo orders 1.3 s.
+- Memory (Heroku metrics): 185 MB after start-up, 205 MB after the test traffic (of 512 MB); no R14/R15 errors.
+- SQLite history is on the dyno's temporary disk: resets on deploy and on Heroku's daily restart (fine for a demo).
